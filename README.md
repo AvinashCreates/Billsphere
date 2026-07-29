@@ -1,214 +1,123 @@
 # Billing Platform
 
-A full-stack Billing Platform built using **FastAPI**, **PostgreSQL**, **SQLAlchemy**, and **Streamlit**. The platform provides secure authentication, role-based authorization, customer management, and is being extended with Plans and Subscription Management.
+A full-stack Billing Platform built using FastAPI, PostgreSQL, SQLAlchemy, JWT Authentication, and Streamlit.
 
 ---
 
-## Project Overview
+# Tech Stack
 
-The Billing Platform is designed to manage users, customers, billing operations, and subscription plans.
+## Backend
 
-Current Features:
-
-- User Registration
-- User Login
-- JWT Authentication
-- Role-Based Authorization (Admin/User)
-- Admin Dashboard
-- User Dashboard
-- Customer API
-- Profile Page
-- Streamlit Frontend
-- FastAPI Backend
-- PostgreSQL Database
-
-Upcoming Features:
-
-- Plans Management
-- Subscription Management
-- Billing & Invoice Generation
-- Reports & Analytics
-- Email Notifications
-- Dashboard Charts
-
----
-
-## Tech Stack
-
-### Backend
-
-- Python
 - FastAPI
 - SQLAlchemy
 - PostgreSQL
 - JWT Authentication
-- Passlib (Password Hashing)
-- Uvicorn
+- Pydantic
 
-### Frontend
+## Frontend
 
 - Streamlit
 
-### Database
+---
 
-- PostgreSQL
+# Features
 
-### Version Control
+## Authentication
 
-- Git
-- GitHub
+- User Login
+- JWT Authentication
+- Role Based Authorization
 
 ---
 
-## Project Structure
+## Customer Module ✅
+
+### Admin
+
+- Create Customer
+- View Customers
+- Update Customer
+- Delete Customer
+
+### Customer
+
+- View Profile
+
+---
+
+## Plans Module ✅
+
+### Admin
+
+- View All Plans
+- View Plan Details
+- Create New Plan
+- Update Existing Plan
+- Deactivate Plan
+
+### Customer
+
+- View Active Plans
+- View Plan Details
+
+---
+
+## Upcoming Modules
+
+- Subscription Module
+- Billing Module
+- Invoice Module
+- Payment Module
+
+---
+
+# Folder Structure
 
 ```
 billing-platform/
 
+backend/
 │
 ├── app/
-│   ├── api/
-│   ├── models/
-│   ├── schemas/
-│   ├── services/
-│   ├── repositories/
-│   ├── utils/
-│   ├── database.py
-│   └── main.py
+├── database/
+├── routers/
+├── models/
+├── schemas/
+├── services/
+
+frontend/
 │
-├── frontend/
-│   ├── pages/
-│   ├── app.py
-│   ├── auth.py
-│   ├── config.py
-│   └── utils.py
-│
-├── requirements.txt
-├── .gitignore
-└── README.md
+├── pages/
+├── utils.py
+├── config.py
+
+README.md
+requirements.txt
 ```
 
 ---
 
-## Authentication
+# Installation
 
-The application uses JWT (JSON Web Tokens).
-
-Workflow:
-
-```
-Register
-      │
-      ▼
-Login
-      │
-      ▼
-Generate JWT Token
-      │
-      ▼
-Store Token
-      │
-      ▼
-Access Protected APIs
-```
-
----
-
-## Authorization
-
-Two user roles are currently supported.
-
-### Admin
-
-- Login
-- View Dashboard
-- Manage Customers
-- Manage Plans (Upcoming)
-- Manage Subscriptions (Upcoming)
-
-### User
-
-- Login
-- View Dashboard
-- View Plans (Upcoming)
-- Subscribe to Plans (Upcoming)
-- Manage Profile
-
----
-
-## Current API Endpoints
-
-### Authentication
-
-```
-POST /auth/register
-
-POST /auth/login
-```
-
-### User
-
-```
-GET /users/me
-```
-
-### Customers
-
-```
-GET /customers
-```
-
----
-
-## Planned APIs
-
-### Plans
-
-```
-GET /plans
-
-GET /plans/{id}
-
-POST /plans
-
-PUT /plans/{id}
-
-DELETE /plans/{id}
-```
-
-### Subscriptions
-
-```
-POST /subscriptions
-
-GET /subscriptions/me
-
-DELETE /subscriptions/{id}
-```
-
----
-
-## Installation
-
-Clone the repository
+Clone Repository
 
 ```bash
-git clone https://github.com/sarada-02092004/billing-platform.git
+git clone <repository_url>
 ```
 
-Move into project
+Move inside project
 
 ```bash
 cd billing-platform
 ```
 
-Create virtual environment
+Create Virtual Environment
 
 ```bash
 python -m venv venv
 ```
 
-Activate virtual environment
+Activate
 
 Windows
 
@@ -216,7 +125,7 @@ Windows
 venv\Scripts\activate
 ```
 
-Install dependencies
+Install Requirements
 
 ```bash
 pip install -r requirements.txt
@@ -224,121 +133,130 @@ pip install -r requirements.txt
 
 ---
 
-## Running Backend
+# Environment Variables
 
-```bash
+Create a `.env` file.
+
+```
+DATABASE_URL=postgresql://postgres:password@localhost:5432/billing_platform
+
+SECRET_KEY=your_secret_key
+
+ALGORITHM=HS256
+
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+---
+
+# Run Backend
+
+```
 uvicorn app.main:app --reload
 ```
 
-Backend URL
+---
+
+# Run Frontend
 
 ```
-http://127.0.0.1:8000
-```
-
-Swagger Documentation
-
-```
-http://127.0.0.1:8000/docs
+streamlit run app.py
 ```
 
 ---
 
-## Running Frontend
+# API Endpoints
 
-```bash
-streamlit run frontend/app.py
-```
+## Authentication
 
-or
-
-```bash
-python -m streamlit run frontend/app.py
-```
-
-Frontend URL
-
-```
-http://localhost:8501
-```
+- POST /login
 
 ---
 
-## Git Workflow
+## Customers
 
-Every team member works on their own branch.
+- GET /customers
+- GET /customers/{id}
+- POST /customers
+- PUT /customers/{id}
+- DELETE /customers/{id}
 
-Example
+---
+
+## Plans
+
+### Admin
+
+- GET /plans
+- GET /plans/{id}
+- POST /plans
+- PUT /plans/{id}
+- DELETE /plans/{id}
+
+### Customer
+
+- GET /plans
+- GET /plans/{id}
+
+---
+
+# Project Status
+
+| Module | Status |
+|---------|--------|
+| Authentication | ✅ Completed |
+| Customer | ✅ Completed |
+| Plans | ✅ Completed |
+| Subscription | 🚧 In Progress |
+| Billing | ⏳ Pending |
+| Invoice | ⏳ Pending |
+| Payment | ⏳ Pending |
+
+---
+
+# Team Members
+
+- Sarada Prasad Sahoo (Lead Developer)
+- Sonal
+- Manju
+- Prameela
+- Siddhi
+
+---
+
+# Git Workflow
+
+Each team member works in their own feature branch.
 
 ```
-feature/plans
-
-feature/subscriptions
-
-feature/customers
-
-feature/frontend
-
-feature/testing
+main
+│
+├── feature/subscription-backend
+├── feature/subscription-frontend
+├── feature/billing-frontend
+├── feature/invoice-frontend
+└── feature/dashboard-ui
 ```
 
-Daily Workflow
+Workflow:
 
 ```
 git checkout main
-
 git pull origin main
-
-git checkout feature/<branch-name>
-```
-
-After completing work
-
-```
+git checkout -b feature/<task>
 git add .
-
-git commit -m "Meaningful commit message"
-
-git push origin feature/<branch-name>
+git commit -m "Completed feature"
+git push origin feature/<task>
 ```
 
-Create a Pull Request before merging into `main`.
+Only the Team Lead merges approved changes into `main`.
 
 ---
 
-## Team Responsibilities
+# Future Enhancements
 
-| Member | Module |
-|----------|---------|
-| Member 1 | Authentication & Plans |
-| Member 2 | Customers |
-| Member 3 | Subscriptions |
-| Member 4 | Frontend |
-| Member 5 | Database, Testing & Documentation |
-
----
-
-## Future Enhancements
-
-- Plans Management
-- Subscription Module
-- Billing System
-- Invoice Generation
-- Reports
-- Revenue Dashboard
 - Email Notifications
-- Charts & Analytics
-- Deployment
-
----
-
-## Contributors
-
-- Sarada Prasad Sahoo
-- Team Members
-
----
-
-## License
-
-This project is developed for learning and internship purposes.
+- Payment Gateway
+- Invoice PDF Download
+- Analytics Dashboard
+- Reports
