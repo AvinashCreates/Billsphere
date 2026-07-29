@@ -1,0 +1,32 @@
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from datetime import datetime, UTC
+
+from app.database.base import Base
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    plan_id = Column(
+        Integer,
+        ForeignKey("plans.id"),
+        nullable=False
+    )
+
+    status = Column(
+        String,
+        default="active"
+    )
+
+    subscribed_at = Column(
+        DateTime,
+        default=lambda: datetime.now(UTC)
+    )

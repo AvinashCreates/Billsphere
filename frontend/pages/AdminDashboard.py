@@ -30,8 +30,8 @@ with st.sidebar:
     if st.button("Customers", use_container_width=True):
         st.switch_page("pages/Customers.py")
 
-    if st.button("Plans", use_container_width=True):
-        st.info("Plans module coming soon.")
+    if st.button("Plans"):
+       st.switch_page("pages/Plans.py")
 
     if st.button("Subscriptions", use_container_width=True):
         st.info("Subscriptions module coming soon.")
@@ -63,4 +63,4 @@ with col1:
 
 with col2:
     if st.button("Manage Plans", use_container_width=True):
-        st.info("Plans module coming soon.")
+        st.switch_page("pages/Plans.py")

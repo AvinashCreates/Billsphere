@@ -25,6 +25,9 @@ with st.sidebar:
     if st.button("Customers"):
         st.switch_page("pages/Customers.py")
 
+    if st.button("Plans"):
+       st.switch_page("pages/Plans.py") 
+
     if st.button("Logout"):
         logout()
         st.switch_page("app.py")
