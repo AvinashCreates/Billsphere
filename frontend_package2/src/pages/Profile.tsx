@@ -1,613 +1,129 @@
 import { useState } from "react";
-import { Camera, Save } from "lucide-react";
+import { Camera, Save, Sparkles } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+import Card from "../components/Card";
+import { useToast } from "../components/ToastProvider";
 
+function Profile() {
+  const user: any = JSON.parse(localStorage.getItem("user") || "{}");
+  const [profile, setProfile] = useState({
+    name: user.name || "User",
+    email: user.email || "",
+    phone: user.phone || "",
+    about: user.about || "",
+    image: user.image || "",
+    joined: user.created_at || new Date().toLocaleDateString(),
+    subscription: user.subscription || "Free",
+  });
+  const { notify } = useToast();
 
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setProfile({
+      ...profile,
+      [e.target.name]: e.target.value,
+    });
+  }
 
-function Profile(){
+  function imageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setProfile({
+          ...profile,
+          image: reader.result as string,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
+  function saveProfile() {
+    const updatedUser = {
+      ...user,
+      ...profile,
+    };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    notify({
+      title: "Profile saved",
+      description: "Your profile details were updated successfully.",
+      variant: "success",
+    });
+  }
 
-const user:any = JSON.parse(
+  return (
+    <div className="fade-in">
+      <PageHeader
+        eyebrow="Profile"
+        title="Profile"
+        description="Manage your personal account and identity settings."
+        action={<span className="inline-flex items-center gap-2"><Sparkles size={16} />{profile.subscription}</span>}
+      />
 
-localStorage.getItem("user") || "{}"
+      <Card className="mx-auto max-w-3xl">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-5">
+            {profile.image ? (
+              <img src={profile.image} className="h-24 w-24 rounded-full object-cover" alt="Profile" />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-4xl font-semibold text-white">
+                {profile.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{profile.name}</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{profile.email}</p>
+              <p className="mt-2 inline-flex items-center rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">{profile.subscription} plan</p>
+            </div>
+          </div>
 
-);
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/70 dark:text-slate-300">
+            <Camera size={16} />
+            Upload photo
+            <input type="file" className="hidden" onChange={imageUpload} accept="image/*" />
+          </label>
+        </div>
 
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Full name
+              <input name="name" value={profile.name} onChange={handleChange} className="input-field mt-2" />
+            </label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Email
+              <input name="email" value={profile.email} onChange={handleChange} className="input-field mt-2" />
+            </label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Phone
+              <input name="phone" value={profile.phone} onChange={handleChange} className="input-field mt-2" />
+            </label>
+          </div>
 
-
-
-
-const [edit,setEdit]=useState(false);
-
-
-
-const [profile,setProfile]=useState({
-
-
-name:user.name || "User",
-
-email:user.email || "",
-
-phone:user.phone || "",
-
-about:user.about || "",
-
-image:user.image || "",
-
-joined:user.created_at || 
-new Date().toLocaleDateString(),
-
-subscription:user.subscription || "Free"
-
-
-});
-
-
-
-
-
-
-
-
-
-function handleChange(e:any){
-
-
-setProfile({
-
-...profile,
-
-[e.target.name]:e.target.value
-
-});
-
-
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              About
+              <textarea
+                name="about"
+                value={profile.about}
+                onChange={handleChange}
+                className="input-field mt-2 min-h-[120px] resize-none"
+              />
+            </label>
+            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 text-sm text-slate-600 dark:border-slate-700/70 dark:bg-slate-950/50 dark:text-slate-400">
+              <p className="font-medium text-slate-900 dark:text-white">Account details</p>
+              <p className="mt-2">Joined {profile.joined}</p>
+              <p className="mt-1">Subscription: {profile.subscription}</p>
+            </div>
+            <button onClick={saveProfile} className="btn-primary w-full">
+              <Save size={18} />
+              Save Profile
+            </button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
 }
-
-
-
-
-
-
-
-
-function imageUpload(e:any){
-
-
-const file=e.target.files[0];
-
-
-if(file){
-
-
-const reader=new FileReader();
-
-
-
-reader.onload=()=>{
-
-
-setProfile({
-
-...profile,
-
-image:reader.result as string
-
-});
-
-
-};
-
-
-
-reader.readAsDataURL(file);
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-
-function saveProfile(){
-
-
-
-const updatedUser={
-
-...user,
-
-...profile
-
-};
-
-
-
-
-
-localStorage.setItem(
-
-"user",
-
-JSON.stringify(updatedUser)
-
-);
-
-
-
-setEdit(false);
-
-
-alert(
-"Profile updated successfully"
-);
-
-
-}
-
-
-
-
-
-
-
-
-return(
-
-
-<div>
-
-
-<h1 className="
-text-4xl
-font-bold
-mb-8
-text-slate-900
-dark:text-white
-">
-
-Profile 👤
-
-</h1>
-
-
-
-
-
-
-
-<div className="
-max-w-3xl
-bg-white
-dark:bg-slate-900
-rounded-3xl
-shadow
-border
-dark:border-slate-700
-p-8
-">
-
-
-
-
-
-
-
-{/* Image */}
-
-
-<div className="
-flex
-items-center
-gap-6
-mb-8
-">
-
-
-<div>
-
-
-{
-
-profile.image ?
-
-
-<img
-
-src={profile.image}
-
-className="
-w-28
-h-28
-rounded-full
-object-cover
-"
-
-/>
-
-
-:
-
-
-<div className="
-w-28
-h-28
-rounded-full
-bg-blue-600
-text-white
-flex
-items-center
-justify-center
-text-5xl
-font-bold
-">
-
-{
-
-profile.name.charAt(0).toUpperCase()
-
-}
-
-</div>
-
-
-}
-
-
-
-</div>
-
-
-
-
-
-
-
-{
-
-edit &&
-
-<label className="
-cursor-pointer
-bg-blue-600
-text-white
-px-5
-py-3
-rounded-xl
-flex
-items-center
-gap-2
-">
-
-
-<Camera size={18}/>
-
-Upload Image
-
-
-<input
-
-type="file"
-
-hidden
-
-accept="image/*"
-
-onChange={imageUpload}
-
-/>
-
-
-</label>
-
-
-}
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Details */}
-
-
-
-<div className="
-space-y-5
-">
-
-
-
-
-
-<input
-
-name="name"
-
-disabled={!edit}
-
-value={profile.name}
-
-onChange={handleChange}
-
-className="
-w-full
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-
-
-<input
-
-name="email"
-
-disabled={!edit}
-
-value={profile.email}
-
-onChange={handleChange}
-
-className="
-w-full
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-
-
-
-<input
-
-name="phone"
-
-disabled={!edit}
-
-value={profile.phone}
-
-onChange={handleChange}
-
-placeholder="Phone Number"
-
-className="
-w-full
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-
-
-
-<textarea
-
-name="about"
-
-disabled={!edit}
-
-value={profile.about}
-
-onChange={handleChange}
-
-placeholder="About yourself"
-
-className="
-w-full
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Info */}
-
-
-
-<div className="
-mt-8
-grid
-md:grid-cols-2
-gap-5
-">
-
-
-
-<div className="
-bg-slate-100
-dark:bg-slate-800
-p-5
-rounded-2xl
-">
-
-
-<h3 className="
-font-semibold
-">
-
-Subscription
-
-</h3>
-
-
-<p className="
-mt-2
-text-gray-500
-">
-
-{profile.subscription}
-
-</p>
-
-
-</div>
-
-
-
-
-
-
-
-<div className="
-bg-slate-100
-dark:bg-slate-800
-p-5
-rounded-2xl
-">
-
-
-<h3 className="
-font-semibold
-">
-
-Joined On
-
-</h3>
-
-
-<p className="
-mt-2
-text-gray-500
-">
-
-{profile.joined}
-
-</p>
-
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Buttons */}
-
-
-{
-
-edit ?
-
-
-<button
-
-onClick={saveProfile}
-
-className="
-mt-8
-bg-green-600
-text-white
-px-8
-py-3
-rounded-xl
-flex
-items-center
-gap-2
-"
-
->
-
-
-<Save size={18}/>
-
-Save Profile
-
-
-</button>
-
-
-
-:
-
-
-<button
-
-onClick={()=>setEdit(true)}
-
-className="
-mt-8
-bg-blue-600
-text-white
-px-8
-py-3
-rounded-xl
-"
-
->
-
-Edit Profile
-
-</button>
-
-
-
-}
-
-
-
-
-
-</div>
-
-
-
-</div>
-
-
-)
-
-}
-
 
 export default Profile;

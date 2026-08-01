@@ -1,727 +1,215 @@
-import { useState } from "react";
-import {
-  FilePlus,
-  Trash2,
-  Search
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { FilePlus, Trash2, Search, ReceiptText, Sparkles } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+import Card from "../components/common/Card";
+import AppShell from "../components/layout/AppShell";
+import DataTable from "../components/table/DataTable";
+import { useToast } from "../components/ToastProvider";
+import EmptyState from "../components/EmptyState";
 
-
-
-function Invoices(){
-
-
-const user:any = JSON.parse(
-
-localStorage.getItem("user") || "{}"
-
-);
-
-
-
-const [invoices,setInvoices]=useState<any[]>(
-
-user.invoicesList || []
-
-);
-
-
-
-const [customer,setCustomer]=useState("");
-
-const [amount,setAmount]=useState("");
-
-const [status,setStatus]=useState("Pending");
-
-const [search,setSearch]=useState("");
-
-
-
-
-
-
-function createInvoice(){
-
-
-if(!customer || !amount){
-
-alert("Please enter invoice details");
-
-return;
-
+interface Invoice {
+  id: number;
+  customer: string;
+  amount: number;
+  status: string;
+  date: string;
 }
 
+function Invoices() {
+  const user: any = JSON.parse(localStorage.getItem("user") || "{}");
+  const [invoices, setInvoices] = useState<Invoice[]>(user.invoicesList || []);
+  const [customer, setCustomer] = useState("");
+  const [amount, setAmount] = useState("");
+  const [status, setStatus] = useState("Pending");
+  const [search, setSearch] = useState("");
+  const { notify } = useToast();
 
+  function persist(updated: Invoice[]) {
+    const totalRevenue = updated.filter((item) => item.status === "Paid").reduce((sum, item) => sum + Number(item.amount), 0);
+    setInvoices(updated);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...user,
+        invoicesList: updated,
+        invoices: updated.length,
+        revenue: `$${totalRevenue}`,
+      })
+    );
+  }
 
+  function createInvoice() {
+    if (!customer.trim() || !amount.trim()) {
+      notify({
+        title: "Invoice missing data",
+        description: "Provide both customer and amount to create an invoice.",
+        variant: "error",
+      });
+      return;
+    }
 
-const newInvoice={
+    const newInvoice: Invoice = {
+      id: Date.now(),
+      customer: customer.trim(),
+      amount: Number(amount),
+      status,
+      date: new Date().toLocaleDateString(),
+    };
 
+    const updated = [newInvoice, ...invoices];
+    persist(updated);
+    setCustomer("");
+    setAmount("");
+    setStatus("Pending");
 
-id:Date.now(),
+    notify({
+      title: "Invoice created",
+      description: `Invoice for ${newInvoice.customer} was added successfully.`,
+      variant: "success",
+    });
+  }
 
-customer,
+  function deleteInvoice(id: number) {
+    const updated = invoices.filter((invoice) => invoice.id !== id);
+    persist(updated);
+    notify({
+      title: "Invoice removed",
+      description: "The invoice has been deleted from the ledger.",
+      variant: "info",
+    });
+  }
 
-amount,
+  const filteredInvoices = useMemo(
+    () => invoices.filter((invoice) => invoice.customer.toLowerCase().includes(search.toLowerCase()) || invoice.status.toLowerCase().includes(search.toLowerCase())),
+    [invoices, search]
+  );
 
-status,
+  const columns = useMemo(
+    () => [
+      { key: 'customer', title: 'Customer', sortable: true },
+      { key: 'amount', title: 'Amount', sortable: true, render: (invoice: Invoice) => `$${invoice.amount.toFixed(2)}` },
+      { key: 'status', title: 'Status', sortable: true },
+      { key: 'date', title: 'Date', sortable: true },
+      { key: 'actions', title: 'Actions', render: (invoice: Invoice) => (
+        <button
+          type="button"
+          onClick={() => deleteInvoice(invoice.id)}
+          className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300"
+        >
+          <Trash2 size={16} />
+          Delete
+        </button>
+      ) },
+    ],
+    []
+  );
 
-date:new Date().toLocaleDateString()
+  return (
+    <AppShell>
+      <div className="fade-in">
+      <PageHeader
+        eyebrow="Billing"
+        title="Invoices"
+        description="Create polished invoices and keep billing activity visible across your operations."
+        action={<span className="inline-flex items-center gap-2"><ReceiptText size={16} />{invoices.length} records</span>}
+      />
 
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-blue-500/10 p-3 text-blue-600">
+              <FilePlus size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Create invoice</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Issue clean invoices with full status context.</p>
+            </div>
+          </div>
 
-};
+          <div className="grid gap-4 md:grid-cols-3">
+            <input
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+              placeholder="Customer Name"
+              className="input-field"
+              aria-label="Customer name"
+            />
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Amount"
+              className="input-field"
+              aria-label="Invoice amount"
+            />
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="input-field" aria-label="Invoice status">
+              <option>Pending</option>
+              <option>Paid</option>
+              <option>Overdue</option>
+            </select>
+          </div>
 
+          <button onClick={createInvoice} className="btn-primary">
+            <FilePlus size={18} />
+            Create Invoice
+          </button>
+        </Card>
 
+        <Card className="space-y-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:border-amber-900/40 dark:bg-amber-500/10 dark:text-amber-300">
+            <Sparkles size={14} />
+            Revenue pulse
+          </div>
+          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
+            <p className="text-sm text-slate-600 dark:text-slate-400">A quick snapshot of collected revenue from your paid invoices.</p>
+            <div className="mt-4 flex items-end justify-between">
+              <div>
+                <p className="text-3xl font-semibold text-slate-900 dark:text-white">${invoices.filter((invoice) => invoice.status === "Paid").reduce((sum, invoice) => sum + Number(invoice.amount), 0).toFixed(2)}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Collected revenue</p>
+              </div>
+              <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">Healthy flow</div>
+            </div>
+          </div>
+        </Card>
+      </div>
 
+      <Card className="mt-6">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Invoice list</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Find invoices quickly and take action on overdue or pending payments.</p>
+          </div>
+          <div className="flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/70 px-3 py-2 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/70">
+            <Search size={18} className="text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search invoices"
+              className="w-40 border-0 bg-transparent outline-none"
+              aria-label="Search invoices"
+            />
+          </div>
+        </div>
 
-
-const updated=[
-
-...invoices,
-
-newInvoice
-
-];
-
-
-
-
-setInvoices(updated);
-
-
-
-
-
-const totalRevenue = updated
-
-.filter(
-(item)=>item.status==="Paid"
-)
-
-.reduce(
-
-(sum,item)=>sum + Number(item.amount),
-
-0
-
-);
-
-
-
-
-
-
-localStorage.setItem(
-
-"user",
-
-JSON.stringify({
-
-...user,
-
-invoicesList:updated,
-
-invoices:updated.length,
-
-revenue:`$${totalRevenue}`
-
-})
-
-);
-
-
-
-
-
-setCustomer("");
-
-setAmount("");
-
-setStatus("Pending");
-
-
-
+        {filteredInvoices.length === 0 ? (
+          <EmptyState
+            title="No invoices found"
+            description="Create your first invoice to start tracking payment progress and revenue performance."
+            primaryAction={{ label: "New invoice", path: "/invoices" }}
+            icon={<ReceiptText size={24} />}
+          />
+        ) : (
+          <DataTable
+            columns={columns}
+            data={filteredInvoices}
+            searchable
+            pageSize={10}
+          />
+        )}
+      </Card>
+      </div>
+    </AppShell>
+  );
 }
-
-
-
-
-
-
-
-
-function deleteInvoice(id:number){
-
-
-
-const updated = invoices.filter(
-
-(invoice)=>invoice.id!==id
-
-);
-
-
-
-setInvoices(updated);
-
-
-
-const totalRevenue = updated
-
-.filter(
-(item)=>item.status==="Paid"
-)
-
-.reduce(
-
-(sum,item)=>sum + Number(item.amount),
-
-0
-
-);
-
-
-
-
-
-localStorage.setItem(
-
-"user",
-
-JSON.stringify({
-
-...user,
-
-invoicesList:updated,
-
-invoices:updated.length,
-
-revenue:`$${totalRevenue}`
-
-})
-
-);
-
-
-
-}
-
-
-
-
-
-
-
-const filteredInvoices=invoices.filter(
-
-(invoice)=>
-
-invoice.customer
-.toLowerCase()
-.includes(search.toLowerCase())
-
-
-);
-
-
-
-
-
-
-
-
-return(
-
-
-<div>
-
-
-
-<div className="
-mb-8
-">
-
-
-<h1 className="
-text-4xl
-font-bold
-text-slate-900
-dark:text-white
-">
-
-Invoices 🧾
-
-</h1>
-
-
-
-<p className="
-text-gray-500
-mt-2
-">
-
-Create and manage your business invoices.
-
-</p>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Create Invoice */}
-
-
-
-<div className="
-bg-white
-dark:bg-slate-900
-rounded-3xl
-p-8
-shadow
-border
-dark:border-slate-700
-mb-8
-">
-
-
-
-<h2 className="
-text-2xl
-font-bold
-mb-5
-">
-
-Create New Invoice
-
-</h2>
-
-
-
-
-
-
-<div className="
-grid
-md:grid-cols-4
-gap-4
-">
-
-
-
-<input
-
-placeholder="Customer Name"
-
-value={customer}
-
-onChange={
-e=>setCustomer(e.target.value)
-}
-
-className="
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-
-
-
-<input
-
-placeholder="Amount"
-
-type="number"
-
-value={amount}
-
-onChange={
-e=>setAmount(e.target.value)
-}
-
-className="
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-
-
-
-
-<select
-
-value={status}
-
-onChange={
-e=>setStatus(e.target.value)
-}
-
-className="
-border
-p-3
-rounded-xl
-"
-
->
-
-
-<option>
-
-Pending
-
-</option>
-
-
-<option>
-
-Paid
-
-</option>
-
-
-
-</select>
-
-
-
-
-
-
-
-
-<button
-
-onClick={createInvoice}
-
-className="
-bg-blue-600
-text-white
-rounded-xl
-flex
-items-center
-justify-center
-gap-2
-"
-
->
-
-
-<FilePlus size={20}/>
-
-Create
-
-</button>
-
-
-
-
-
-</div>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Invoice List */}
-
-
-
-<div className="
-bg-white
-dark:bg-slate-900
-rounded-3xl
-p-8
-shadow
-border
-dark:border-slate-700
-">
-
-
-
-
-
-<div className="
-flex
-justify-between
-items-center
-mb-6
-">
-
-
-<h2 className="
-text-2xl
-font-bold
-">
-
-Invoice History
-
-</h2>
-
-
-
-
-
-
-<div className="
-flex
-items-center
-border
-rounded-xl
-px-3
-">
-
-
-<Search size={18}/>
-
-
-<input
-
-placeholder="Search customer"
-
-value={search}
-
-onChange={
-e=>setSearch(e.target.value)
-}
-
-className="
-p-2
-outline-none
-"
-
-/>
-
-
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-
-
-
-{
-
-filteredInvoices.length===0 ?
-
-
-<div className="
-text-center
-py-10
-text-gray-500
-">
-
-No invoices created yet.
-
-</div>
-
-
-:
-
-
-<div className="
-space-y-4
-">
-
-
-{
-
-filteredInvoices.map((invoice)=>(
-
-
-<div
-
-key={invoice.id}
-
-className="
-flex
-justify-between
-items-center
-border
-p-5
-rounded-2xl
-"
-
->
-
-
-
-<div>
-
-
-<h3 className="
-font-bold
-text-lg
-">
-
-{invoice.customer}
-
-</h3>
-
-
-
-<p className="
-text-gray-500
-">
-
-Amount: ${invoice.amount}
-
-</p>
-
-
-
-<p className="
-text-sm
-text-gray-400
-">
-
-{invoice.date}
-
-</p>
-
-
-</div>
-
-
-
-
-
-
-
-<div className="
-flex
-items-center
-gap-4
-">
-
-
-
-<span
-
-className={
-
-`
-px-4
-py-2
-rounded-xl
-text-sm
-
-${
-invoice.status==="Paid"
-
-?
-
-"bg-green-100 text-green-700"
-
-:
-
-"bg-yellow-100 text-yellow-700"
-
-}
-
-`
-
-}
-
->
-
-{invoice.status}
-
-</span>
-
-
-
-
-
-
-
-<button
-
-onClick={()=>deleteInvoice(invoice.id)}
-
-className="
-text-red-500
-p-3
-rounded-xl
-hover:bg-red-100
-"
-
->
-
-<Trash2 size={20}/>
-
-</button>
-
-
-
-
-</div>
-
-
-
-</div>
-
-
-
-))
-
-
-}
-
-
-
-</div>
-
-
-
-}
-
-
-
-
-</div>
-
-
-
-
-
-
-
-</div>
-
-
-)
-
-}
-
 
 export default Invoices;

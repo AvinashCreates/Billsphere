@@ -1,648 +1,169 @@
 import { useEffect, useState } from "react";
+import { Bell, MoonStar, Save, ShieldCheck } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+import Card from "../components/Card";
+import { useToast } from "../components/ToastProvider";
 
+function Settings() {
+  const user: any = JSON.parse(localStorage.getItem("user") || "{}");
 
-function Settings(){
+  const [form, setForm] = useState({
+    name: user.name || "",
+    email: user.email || "",
+    password: "",
+  });
 
+  const [darkMode, setDarkMode] = useState(localStorage.getItem("theme") === "dark");
+  const [notifications, setNotifications] = useState(true);
+  const { notify } = useToast();
 
-const user:any = JSON.parse(
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    document.documentElement.style.colorScheme = darkMode ? "dark" : "light";
+  }, [darkMode]);
 
-localStorage.getItem("user") || "{}"
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  }
 
-);
+  function saveSettings() {
+    const updatedUser = {
+      ...user,
+      name: form.name,
+      email: form.email,
+    };
 
+    localStorage.setItem("user", JSON.stringify(updatedUser));
 
+    if (form.password) {
+      localStorage.setItem("userPassword", form.password);
+    }
 
-const [form,setForm]=useState({
+    notify({
+      title: "Settings saved",
+      description: "Your account preferences were updated successfully.",
+      variant: "success",
+    });
+  }
 
-name:user.name || "",
+  function toggleTheme() {
+    const value = !darkMode;
+    setDarkMode(value);
+    localStorage.setItem("theme", value ? "dark" : "light");
+  }
 
-email:user.email || "",
+  return (
+    <div className="fade-in">
+      <PageHeader
+        eyebrow="Preferences"
+        title="Settings"
+        description="Tune your billing workspace appearance, access, and notifications."
+        action={<span className="inline-flex items-center gap-2"><ShieldCheck size={16} />Secure workspace</span>}
+      />
 
-password:""
+      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <Card className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-blue-500/10 p-3 text-blue-600">
+              <Save size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Account settings</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Update your profile information and password securely.</p>
+            </div>
+          </div>
 
-});
+          <div className="space-y-4">
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Full Name"
+              className="input-field"
+              aria-label="Full name"
+            />
+            <input
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Email"
+              className="input-field"
+              aria-label="Email"
+            />
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="New Password"
+              className="input-field"
+              aria-label="New password"
+            />
+          </div>
 
+          <button onClick={saveSettings} className="btn-primary">
+            <Save size={18} />
+            Save Settings
+          </button>
+        </Card>
 
+        <Card className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-slate-900/10 p-3 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200">
+              <MoonStar size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Preferences</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Control visual and notification settings for your workspace.</p>
+            </div>
+          </div>
 
-const [darkMode,setDarkMode]=useState(
+          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-slate-700/70 dark:bg-slate-950/50">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-medium text-slate-900 dark:text-white">Dark mode</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Switch the interface theme instantly.</p>
+              </div>
+              <button onClick={toggleTheme} className="btn-ghost" aria-pressed={darkMode}>
+                {darkMode ? "Enabled" : "Disabled"}
+              </button>
+            </div>
+          </div>
 
-localStorage.getItem("theme")==="dark"
-
-);
-
-
-
-const [notifications,setNotifications]=useState(true);
-
-
-
-
-
-// Apply saved theme when page opens
-
-useEffect(()=>{
-
-
-if(darkMode){
-
-document.documentElement.classList.add("dark");
-
+          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 dark:border-slate-700/70 dark:bg-slate-950/50">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-medium text-slate-900 dark:text-white">Notifications</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Receive alerts for plan changes and billing updates.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setNotifications(!notifications);
+                  notify({
+                    title: notifications ? "Notifications muted" : "Notifications enabled",
+                    description: notifications
+                      ? "Billing alerts are now muted."
+                      : "You will receive important billing updates.",
+                    variant: notifications ? "info" : "success",
+                  });
+                }}
+                className={`rounded-full px-3 py-2 text-sm font-medium ${notifications ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100"}`}
+              >
+                {notifications ? "Enabled" : "Muted"}
+              </button>
+            </div>
+            <div className="mt-4 flex items-center gap-2 rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
+              <Bell size={16} />
+              {notifications ? "Notifications are active for important updates." : "Notifications are muted."}
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 }
-
-else{
-
-document.documentElement.classList.remove("dark");
-
-}
-
-
-},[]);
-
-
-
-
-
-
-
-function handleChange(e:any){
-
-
-setForm({
-
-...form,
-
-[e.target.name]:e.target.value
-
-});
-
-
-}
-
-
-
-
-
-
-
-function saveSettings(){
-
-
-
-const updatedUser={
-
-...user,
-
-name:form.name,
-
-email:form.email
-
-};
-
-
-
-
-localStorage.setItem(
-
-"user",
-
-JSON.stringify(updatedUser)
-
-);
-
-
-
-
-if(form.password){
-
-
-localStorage.setItem(
-
-"userPassword",
-
-form.password
-
-);
-
-
-}
-
-
-
-alert(
-"Settings updated successfully"
-);
-
-
-}
-
-
-
-
-
-
-
-
-
-function toggleTheme(){
-
-
-const value=!darkMode;
-
-
-setDarkMode(value);
-
-
-
-if(value){
-
-
-document.documentElement.classList.add("dark");
-
-
-localStorage.setItem(
-"theme",
-"dark"
-);
-
-
-}
-
-else{
-
-
-document.documentElement.classList.remove("dark");
-
-
-localStorage.setItem(
-"theme",
-"light"
-);
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-return(
-
-
-<div>
-
-
-<h1 className="
-text-4xl
-font-bold
-mb-8
-">
-
-Settings ⚙️
-
-</h1>
-
-
-
-
-
-
-
-<div className="
-space-y-6
-">
-
-
-
-
-
-{/* Account Settings */}
-
-<div className="
-bg-white
-rounded-3xl
-p-8
-shadow
-border
-">
-
-
-<h2 className="
-text-2xl
-font-bold
-mb-5
-">
-
-Account Settings
-
-</h2>
-
-
-
-<div className="
-space-y-4
-">
-
-
-<input
-
-name="name"
-
-value={form.name}
-
-onChange={handleChange}
-
-placeholder="Full Name"
-
-className="
-w-full
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-<input
-
-name="email"
-
-value={form.email}
-
-onChange={handleChange}
-
-placeholder="Email"
-
-className="
-w-full
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-
-<input
-
-name="password"
-
-type="password"
-
-value={form.password}
-
-onChange={handleChange}
-
-placeholder="New Password"
-
-className="
-w-full
-border
-p-3
-rounded-xl
-"
-
-/>
-
-
-
-</div>
-
-
-
-
-
-<button
-
-onClick={saveSettings}
-
-className="
-mt-5
-bg-blue-600
-text-white
-px-6
-py-3
-rounded-xl
-"
-
->
-
-Save Changes
-
-</button>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Subscription */}
-
-<div className="
-bg-white
-rounded-3xl
-p-8
-shadow
-border
-">
-
-
-<h2 className="
-text-2xl
-font-bold
-">
-
-Subscription 💳
-
-</h2>
-
-
-
-<p className="
-mt-4
-text-gray-600
-">
-
-Current Plan:
-
-<strong>
-
-{" "}
-{user.subscription || "Free"}
-
-</strong>
-
-</p>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Preferences */}
-
-<div className="
-bg-white
-rounded-3xl
-p-8
-shadow
-border
-">
-
-
-<h2 className="
-text-2xl
-font-bold
-mb-5
-">
-
-Preferences
-
-</h2>
-
-
-
-
-
-
-<div className="
-flex
-justify-between
-items-center
-mb-5
-">
-
-
-<div>
-
-<h3 className="font-semibold">
-
-Dark Mode 🌙
-
-</h3>
-
-
-<p className="
-text-gray-500
-text-sm
-">
-
-Change complete website appearance
-
-</p>
-
-
-</div>
-
-
-
-
-<button
-
-onClick={toggleTheme}
-
-className={
-
-`
-px-5
-py-2
-rounded-xl
-text-white
-
-${
-darkMode
-?
-"bg-black"
-:
-"bg-blue-600"
-}
-
-`
-
-}
-
->
-
-
-{
-darkMode
-?
-"Dark"
-:
-"Light"
-}
-
-
-</button>
-
-
-
-</div>
-
-
-
-
-
-
-
-<div className="
-flex
-justify-between
-items-center
-">
-
-
-<div>
-
-<h3 className="font-semibold">
-
-Notifications 🔔
-
-</h3>
-
-
-<p className="
-text-gray-500
-text-sm
-">
-
-Receive billing updates
-
-</p>
-
-
-</div>
-
-
-
-<button
-
-onClick={()=>setNotifications(!notifications)}
-
-className={
-
-`
-px-5
-py-2
-rounded-xl
-text-white
-
-${
-notifications
-?
-"bg-green-600"
-:
-"bg-gray-400"
-}
-
-`
-
-}
-
->
-
-
-{
-notifications
-?
-"ON"
-:
-"OFF"
-}
-
-
-</button>
-
-
-
-</div>
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-{/* Privacy */}
-
-<div className="
-bg-white
-rounded-3xl
-p-8
-shadow
-border
-">
-
-
-<h2 className="
-text-2xl
-font-bold
-">
-
-Privacy & Security 🔒
-
-</h2>
-
-
-
-<p className="
-text-gray-500
-mt-3
-">
-
-Your account information is protected.
-
-</p>
-
-
-
-</div>
-
-
-
-
-
-
-
-</div>
-
-
-</div>
-
-
-)
-
-}
-
 
 export default Settings;

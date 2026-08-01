@@ -1,178 +1,196 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { registerUser } from "../assets/services/api";
+import { useToast } from "../components/ToastProvider";
 
 function Register() {
   const navigate = useNavigate();
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { notify } = useToast();
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "customer",
-  });
+  const [form, setForm] = useState({ email: "", password: "", confirmPassword: "", role: "customer" });
 
-  function handleChange(e: any) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  async function register(e: any) {
+  async function register(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
 
     if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match");
+      const message = "Passwords do not match.";
+      setError(message);
+      notify({ title: "Registration failed", description: message, variant: "error" });
       return;
     }
 
     if (!agree) {
-      alert("Please accept Terms & Conditions");
+      const message = "Please accept the terms to continue.";
+      setError(message);
+      notify({ title: "Registration failed", description: message, variant: "error" });
       return;
     }
 
     setLoading(true);
 
     try {
-      await registerUser({
-        email: form.email,
-        password: form.password,
-        role: form.role,
-      });
-
-      alert("Account Created Successfully");
+      await registerUser({ email: form.email, password: form.password, role: form.role });
+      notify({ title: "Account created", description: "Your billing workspace is ready.", variant: "success" });
       navigate("/login");
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      const message = err.message || "Something went wrong.";
+      setError(message);
+      notify({ title: "Registration failed", description: message, variant: "error" });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-lg">
-        <Link to="/" className="inline-flex items-center gap-2 text-blue-700 font-semibold mb-6 hover:underline">
-          <ArrowLeft size={20} />
-          Back to Home
-        </Link>
+    <main className="min-h-screen bg-slate-50 py-12 text-slate-900 dark:bg-slate-950 dark:text-white">
+      <div className="page-container">
+        <div className="auth-grid overflow-hidden rounded-[28px] border border-slate-200/70 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.08)] dark:border-slate-800/70 dark:bg-slate-950/95">
+          <section className="auth-hero bg-slate-900 text-white sm:p-10 lg:px-14 lg:py-16">
+            <div className="flex flex-col justify-between gap-8 py-8 sm:py-10">
+              <div className="space-y-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">Secure onboarding</p>
+                <h1 className="max-w-2xl text-4xl font-semibold leading-tight sm:text-5xl">Create your enterprise-grade billing account.</h1>
+                <p className="max-w-xl text-base leading-7 text-slate-300">Start managing recurring revenue with clarity and confidence across your whole organization.</p>
+              </div>
 
-        <div className="bg-white rounded-3xl shadow-2xl p-10">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-blue-600">🚀 BillSphere</h1>
-            <p className="text-gray-500 mt-3">Create your account</p>
-            <p className="text-sm text-gray-400 mt-1">Smart Billing & Subscription Platform</p>
-          </div>
-
-          {error && (
-            <div className="mt-4 bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3">
-              {error}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm font-semibold text-white">SOC 2 Type II</p>
+                  <p className="mt-2 text-sm text-slate-300">Compliance built for enterprise workflows.</p>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm font-semibold text-white">Reliable uptime</p>
+                  <p className="mt-2 text-sm text-slate-300">Designed for high-volume subscription operations.</p>
+                </div>
+              </div>
             </div>
-          )}
+          </section>
 
-          <form onSubmit={register} className="mt-8 space-y-5">
-            <div className="relative">
-              <Mail size={20} className="absolute left-4 top-4 text-gray-400" />
-              <input
-                type="email"
-                name="email"
-                placeholder="Email Address"
-                required
-                value={form.email}
-                onChange={handleChange}
-                className="w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          <section className="auth-form p-8 sm:p-10 lg:p-12">
+            <div className="mx-auto max-w-xl">
+              <div className="mb-8">
+                <h2 className="text-3xl font-semibold text-slate-900 dark:text-white">Create account</h2>
+                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-400">Launch your secure billing workspace in minutes.</p>
+              </div>
+
+              {error && (
+                <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={register} className="space-y-6">
+                <div className="space-y-3">
+                  <label htmlFor="email" className="text-sm font-semibold text-slate-900 dark:text-slate-100">Work email</label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="name@company.com"
+                    className="input-field"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="password" className="text-sm font-semibold text-slate-900 dark:text-slate-100">Password</label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={handleChange}
+                      required
+                      placeholder="Create a password"
+                      className="input-field pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-900 dark:hover:text-white"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Use 8+ characters with letters, numbers, and symbols.</p>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="confirmPassword" className="text-sm font-semibold text-slate-900 dark:text-slate-100">Confirm password</label>
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={form.confirmPassword}
+                      onChange={handleChange}
+                      required
+                      placeholder="Confirm password"
+                      className="input-field pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-900 dark:hover:text-white"
+                      aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label htmlFor="role" className="text-sm font-semibold text-slate-900 dark:text-slate-100">Account type</label>
+                  <select
+                    id="role"
+                    name="role"
+                    value={form.role}
+                    onChange={handleChange}
+                    className="input-field"
+                  >
+                    <option value="customer">Customer</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <label className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={agree}
+                    onChange={(e) => setAgree(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                  />
+                  <span>I agree to the terms of service and privacy policy.</span>
+                </label>
+
+                <button type="submit" disabled={loading} className="btn-primary w-full">
+                  {loading ? "Creating account..." : "Create account"}
+                </button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                Already have an account? <Link to="/login" className="font-semibold text-slate-900 underline decoration-slate-300 dark:text-white">Log in</Link>
+              </p>
             </div>
-
-            <div className="relative">
-              <Lock size={20} className="absolute left-4 top-4 text-gray-400" />
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Password"
-                required
-                value={form.password}
-                onChange={handleChange}
-                className="w-full border rounded-xl pl-12 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-3.5 text-gray-500"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
-            <div className="relative">
-              <Lock size={20} className="absolute left-4 top-4 text-gray-400" />
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                required
-                value={form.confirmPassword}
-                onChange={handleChange}
-                className="w-full border rounded-xl pl-12 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-3.5 text-gray-500"
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-600 mb-1 block">Account Type</label>
-              <select
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="customer">Customer</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-
-            <label className="flex items-center gap-3 text-sm text-gray-600">
-              <input
-                type="checkbox"
-                checked={agree}
-                onChange={(e) => setAgree(e.target.checked)}
-                className="w-4 h-4"
-              />
-              I agree to the Terms & Conditions
-            </label>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition duration-300 disabled:opacity-60"
-            >
-              {loading ? "Creating account..." : "Create Account"}
-            </button>
-          </form>
-
-          <div className="text-center mt-6">
-            <p className="text-gray-600">
-              Already have an account?
-              <Link to="/login" className="ml-2 text-blue-600 font-semibold hover:underline">
-                Login
-              </Link>
-            </p>
-          </div>
+          </section>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

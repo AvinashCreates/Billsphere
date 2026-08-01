@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CreditCard, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getMySubscriptions, cancelSubscription, renewSubscription } from "../assets/services/api";
+import { useToast } from "../components/ToastProvider";
+import EmptyState from "../components/EmptyState";
+import Skeleton from "../components/Skeleton";
+import AnalyticsChartCard from "../components/AnalyticsChartCard";
+import StatusBadge from "../components/StatusBadge";
 
 interface Subscription {
   id: number;
@@ -12,7 +19,7 @@ interface Subscription {
   cancel_at_period_end: boolean;
 }
 
-const statusStyles: Record<string, { color: string; icon: JSX.Element; label: string }> = {
+const statusStyles: Record<string, { color: string; icon: ReactNode; label: string }> = {
   active: { color: "text-green-600 bg-green-50", icon: <CheckCircle size={20} />, label: "Active" },
   trial: { color: "text-blue-600 bg-blue-50", icon: <Clock size={20} />, label: "Trial" },
   past_due: { color: "text-amber-600 bg-amber-50", icon: <Clock size={20} />, label: "Past Due" },
@@ -20,15 +27,22 @@ const statusStyles: Record<string, { color: string; icon: JSX.Element; label: st
 };
 
 function UserDashboard() {
+  const { notify } = useToast();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
   function load() {
     setLoading(true);
     getMySubscriptions()
       .then(setSubscriptions)
+      .catch(() => {
+        notify({
+          title: "Subscription load failed",
+          description: "Unable to fetch your current subscription status.",
+          variant: "error",
+        });
+      })
       .finally(() => setLoading(false));
   }
 
@@ -41,17 +55,20 @@ function UserDashboard() {
   async function handleCancel(immediate: boolean) {
     if (!activeSub) return;
     setActionLoading(true);
-    setMessage("");
     try {
       await cancelSubscription(activeSub.id, immediate);
-      setMessage(
-        immediate
-          ? "Subscription cancelled immediately."
-          : "Subscription will cancel at the end of the current period."
-      );
+      notify({
+        title: "Subscription updated",
+        description: immediate ? "Cancelled immediately." : "Will cancel at period end.",
+        variant: "info",
+      });
       load();
     } catch (err: any) {
-      setMessage(err.message || "Could not cancel subscription");
+      notify({
+        title: "Action failed",
+        description: err.message || "Could not cancel subscription.",
+        variant: "error",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -60,134 +77,143 @@ function UserDashboard() {
   async function handleRenew() {
     if (!activeSub) return;
     setActionLoading(true);
-    setMessage("");
     try {
       await renewSubscription(activeSub.id);
-      setMessage("Subscription renewed for a fresh billing period.");
+      notify({
+        title: "Subscription renewed",
+        description: "Your plan is renewed for the next billing period.",
+        variant: "success",
+      });
       load();
     } catch (err: any) {
-      setMessage(err.message || "Could not renew subscription");
+      notify({
+        title: "Renewal failed",
+        description: err.message || "Could not renew subscription.",
+        variant: "error",
+      });
     } finally {
       setActionLoading(false);
     }
   }
 
+  const chartData = useMemo(() => {
+    const baseValue = activeSub ? Math.max(activeSub.plan_id * 120 + 4200, 4200) : 4500;
+    return [
+      { label: "Week 1", value: baseValue * 0.8 },
+      { label: "Week 2", value: baseValue * 0.88 },
+      { label: "Week 3", value: baseValue * 0.96 },
+      { label: "Week 4", value: baseValue * 1.04 },
+    ];
+  }, [activeSub]);
+
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
-          Welcome back 👋
-        </h1>
-        <p className="mt-3 text-gray-500 dark:text-gray-400">
-          Here's the current status of your subscription.
+    <div className="space-y-8">
+      <div className="mb-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Subscriber dashboard</p>
+        <h1 className="mt-3 text-4xl font-semibold text-slate-900 dark:text-white">Subscription health</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-400">
+          Track your plan, renewal cadence, and action items in a centered enterprise workspace.
         </p>
       </div>
 
-      {loading && <p className="text-gray-500">Loading your subscription...</p>}
-
-      {!loading && !activeSub && (
-        <div className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-3xl p-10 text-center shadow">
-          <CreditCard size={40} className="mx-auto text-blue-600 mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            You don't have an active plan yet
-          </h2>
-          <p className="text-gray-500 mt-2 mb-6">
-            Subscribe to a plan to unlock billing features.
-          </p>
-          <Link
-            to="/plans"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition"
-          >
-            View Plans
-          </Link>
+      {loading && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-60 rounded-[24px]" />
+          <Skeleton className="h-60 rounded-[24px]" />
         </div>
       )}
 
+      {!loading && !activeSub && (
+        <EmptyState
+          title="No active plan found"
+          description="Choose a plan to unlock billing automation, invoices, and revenue reporting."
+          primaryAction={{ label: "Explore plans", path: "/plans" }}
+          secondaryAction={{ label: "Visit invoices", path: "/invoices" }}
+          icon={<CreditCard size={24} />}
+        />
+      )}
+
       {!loading && activeSub && (
-        <div className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-3xl p-8 shadow">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Current Plan</p>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                Plan #{activeSub.plan_id}
-              </h2>
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="panel rounded-[24px] p-8 shadow-sm">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Current plan</p>
+                <h2 className="mt-3 text-3xl font-semibold text-slate-900 dark:text-white">Plan #{activeSub.plan_id}</h2>
+              </div>
+              <StatusBadge variant={activeSub.status === "active" ? "success" : activeSub.status === "trial" ? "info" : activeSub.status === "past_due" ? "warning" : "danger"}>
+                {statusStyles[activeSub.status]?.label || activeSub.status}
+              </StatusBadge>
             </div>
 
-            <span
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm ${
-                statusStyles[activeSub.status]?.color || "text-gray-600 bg-gray-100"
-              }`}
-            >
-              {statusStyles[activeSub.status]?.icon}
-              {statusStyles[activeSub.status]?.label || activeSub.status}
-            </span>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <div>
-              <p className="text-gray-500 text-sm">Current period start</p>
-              <p className="font-semibold text-slate-900 dark:text-white">
-                {new Date(activeSub.current_period_start).toLocaleDateString()}
-              </p>
+            <div className="mt-8 grid gap-5 sm:grid-cols-2">
+              <div className="rounded-[24px] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Billing period start</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{new Date(activeSub.current_period_start).toLocaleDateString()}</p>
+              </div>
+              <div className="rounded-[24px] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Next renewal</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{new Date(activeSub.current_period_end).toLocaleDateString()}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-gray-500 text-sm">Current period end</p>
-              <p className="font-semibold text-slate-900 dark:text-white">
-                {new Date(activeSub.current_period_end).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
 
-          {activeSub.cancel_at_period_end && (
-            <div className="mt-6 bg-amber-50 text-amber-700 text-sm rounded-xl px-4 py-3">
-              This subscription is scheduled to cancel at the end of the current period.
-            </div>
-          )}
-
-          {message && (
-            <div className="mt-6 bg-blue-50 text-blue-700 text-sm rounded-xl px-4 py-3">
-              {message}
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-4 mt-8">
-            <Link
-              to="/plans"
-              className="text-blue-600 font-semibold hover:underline flex items-center"
-            >
-              Change plan →
-            </Link>
-
-            {activeSub.status !== "cancelled" && !activeSub.cancel_at_period_end && (
-              <button
-                onClick={() => handleCancel(false)}
-                disabled={actionLoading}
-                className="ml-auto bg-amber-100 text-amber-700 px-5 py-2 rounded-xl hover:bg-amber-200 disabled:opacity-60"
-              >
-                Cancel at period end
-              </button>
+            {activeSub.cancel_at_period_end && (
+              <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                This subscription is scheduled to cancel at the end of the current period.
+              </div>
             )}
 
-            {activeSub.status !== "cancelled" && (
-              <button
-                onClick={() => handleCancel(true)}
-                disabled={actionLoading}
-                className="bg-red-100 text-red-700 px-5 py-2 rounded-xl hover:bg-red-200 disabled:opacity-60"
-              >
-                Cancel immediately
-              </button>
-            )}
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link to="/plans" className="btn-ghost">
+                Change plan
+              </Link>
+              {activeSub.status !== "cancelled" && !activeSub.cancel_at_period_end && (
+                <button
+                  onClick={() => handleCancel(false)}
+                  disabled={actionLoading}
+                  className="btn-ghost"
+                >
+                  Cancel at period end
+                </button>
+              )}
+              {activeSub.status !== "cancelled" && (
+                <button
+                  onClick={() => handleCancel(true)}
+                  disabled={actionLoading}
+                  className="btn-ghost"
+                >
+                  Cancel immediately
+                </button>
+              )}
+              {(activeSub.status === "past_due" || activeSub.cancel_at_period_end) && (
+                <button
+                  onClick={handleRenew}
+                  disabled={actionLoading}
+                  className="btn-primary"
+                >
+                  Renew now
+                </button>
+              )}
+            </div>
+          </section>
 
-            {(activeSub.status === "past_due" || activeSub.cancel_at_period_end) && (
-              <button
-                onClick={handleRenew}
-                disabled={actionLoading}
-                className="bg-green-100 text-green-700 px-5 py-2 rounded-xl hover:bg-green-200 disabled:opacity-60"
-              >
-                Renew now
-              </button>
-            )}
-          </div>
+          <AnalyticsChartCard title="Billing forecast" description="Expected revenue movement for your current plan.">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="userRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" />
+                <XAxis dataKey="label" stroke="#64748b" />
+                <YAxis stroke="#64748b" tickFormatter={(value) => `$${Math.round(value / 1000)}k`} />
+                <Tooltip contentStyle={{ borderRadius: 18, border: "1px solid rgba(148, 163, 184, 0.16)", background: "rgba(255,255,255,0.96)" }} formatter={(value: any) => `$${Number(value).toLocaleString()}`} />
+                <Area type="monotone" dataKey="value" stroke="#2563eb" fill="url(#userRevenue)" strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </AnalyticsChartCard>
         </div>
       )}
     </div>

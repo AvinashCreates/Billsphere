@@ -48,11 +48,16 @@ export async function loginUser(data: { email: string; password: string }) {
 
 // ---- Helper: build auth header from stored token ----
 function authHeaders() {
-  const token = localStorage.getItem("access_token");
-  return {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   };
+  const token = localStorage.getItem("access_token");
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
 }
 
 // ---- Plans ----
@@ -105,6 +110,35 @@ export async function getSubscriptionStats() {
   });
   if (!response.ok) throw new Error("Failed to load subscription stats");
   return response.json();
+}
+
+// ---- Customers ----
+export async function getCustomers() {
+  const response = await fetch(`${API_URL}/customers/`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error("Failed to load customers");
+  return response.json();
+}
+
+export async function createCustomer(data: { name: string; email: string; billing_country: string }) {
+  const response = await fetch(`${API_URL}/customers/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to create customer");
+  return result;
+}
+
+export async function deleteCustomer(id: number) {
+  const response = await fetch(`${API_URL}/customers/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error("Failed to delete customer");
+  return true;
 }
 
 export async function cancelSubscription(id: number, immediate: boolean) {

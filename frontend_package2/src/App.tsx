@@ -9,7 +9,8 @@ import { useEffect } from "react";
 
 
 import Navbar from "./components/Navbar";
-
+import CommandPalette from "./components/CommandPalette";
+import Footer from "./components/Footer";
 
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -38,46 +39,27 @@ const location = useLocation();
 
 
 
-// Load saved theme
+useEffect(() => {
+  const savedTheme = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const shouldUseDark = savedTheme === "dark" || (!savedTheme && prefersDark);
 
-useEffect(()=>{
-
-
-const theme =
-localStorage.getItem("theme");
-
-
-if(theme==="dark"){
-
-document.documentElement.classList.add("dark");
-
-}
-
-else{
-
-document.documentElement.classList.remove("dark");
-
-}
-
-
-},[]);
+  document.documentElement.classList.toggle("dark", shouldUseDark);
+  document.documentElement.style.colorScheme = shouldUseDark ? "dark" : "light";
+}, []);
 
 
 
 
 
-const publicPages=[
-
-"/",
-"/login",
-"/register"
-
+const publicPages = [
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
 ];
 
-
-
-const showNavbar =
-publicPages.includes(location.pathname);
+const showNavbar = publicPages.includes(location.pathname);
 
 
 
@@ -93,8 +75,7 @@ return(
 showNavbar && <Navbar/>
 }
 
-
-
+<CommandPalette />
 
 <Routes>
 
@@ -216,6 +197,7 @@ element={<ForgotPassword/>}
 
 </Routes>
 
+<Footer />
 
 </>
 
@@ -230,9 +212,7 @@ element={<ForgotPassword/>}
 
 
 function App(){
-
-
-return(
+  return(
 
 <BrowserRouter>
 
