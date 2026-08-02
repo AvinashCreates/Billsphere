@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Billing Platform
 
 A full-stack Billing Platform built using FastAPI, PostgreSQL, SQLAlchemy, JWT Authentication, and Streamlit.
@@ -261,6 +260,3 @@ Only the Team Lead merges approved changes into `main`.
 - Invoice PDF Download
 - Analytics Dashboard
 - Reports
-=======
-# Recurring-Revenue--Subscription---Billing-Automation-Platform-July-2026
->>>>>>> 406fbd299848be5a819f9db59cd63ae6fcd3d2c0
