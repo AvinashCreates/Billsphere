@@ -123,6 +123,37 @@ def subscribe(
 # ---------------------------------------------------------------------
 # LIST MINE
 # ---------------------------------------------------------------------
+@router.get("/")
+def list_all_subscriptions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+):
+    """Admin view: every subscription joined with customer + plan info."""
+    subs = db.query(Subscription).all()
+    result = []
+
+    for sub in subs:
+        customer = db.query(Customer).filter(Customer.id == sub.customer_id).first()
+        plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
+
+        result.append({
+            "id": sub.id,
+            "status": sub.status,  # trial/active/past_due/cancelled
+            "trial_ends_at": sub.trial_ends_at,
+            "current_period_start": sub.current_period_start,
+            "current_period_end": sub.current_period_end,
+            "cancel_at_period_end": sub.cancel_at_period_end,
+            "customer_id": sub.customer_id,
+            "customer_name": customer.name if customer else None,
+            "customer_email": customer.email if customer else None,
+            "plan_id": sub.plan_id,
+            "plan_name": plan.name if plan else None,
+            "plan_price": float(plan.price) if plan else None,
+        })
+
+    return result
+
+
 @router.get("/me", response_model=list[SubscriptionResponse])
 def my_subscriptions(
     db: Session = Depends(get_db),
