@@ -189,3 +189,64 @@ export async function createPlan(data: { name: string; price: number; billing_in
   if (!response.ok) throw new Error(result.detail || "Failed to create plan");
   return result;
 }
+
+export async function updatePlan(
+  id: number,
+  data: Partial<{ name: string; price: number; billing_interval: string; trial_period_days: number }>
+) {
+  const response = await fetch(`${API_URL}/plans/${id}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to update plan");
+  return result;
+}
+
+export async function deletePlan(id: number) {
+  const response = await fetch(`${API_URL}/plans/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to delete plan");
+  return result;
+}
+
+export async function getAllSubscriptions() {
+  const response = await fetch(`${API_URL}/subscriptions/`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error("Failed to load subscriptions");
+  return response.json();
+}
+
+// ---- Invoices ----
+export async function getInvoices() {
+  const response = await fetch(`${API_URL}/invoices/`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error("Failed to load invoices");
+  return response.json();
+}
+
+export async function createInvoice(data: { subscription_id: number; amount: number }) {
+  const response = await fetch(`${API_URL}/invoices/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to create invoice");
+  return result;
+}
+
+export async function deleteInvoice(id: number) {
+  const response = await fetch(`${API_URL}/invoices/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error("Failed to delete invoice");
+  return true;
+}

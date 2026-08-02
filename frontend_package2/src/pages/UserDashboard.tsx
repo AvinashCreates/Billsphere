@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CreditCard, CheckCircle, Clock, XCircle } from "lucide-react";
+import { CreditCard, CheckCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getMySubscriptions, cancelSubscription, renewSubscription } from "../assets/services/api";
 import { useToast } from "../components/ToastProvider";
@@ -25,6 +25,9 @@ const statusStyles: Record<string, { color: string; icon: ReactNode; label: stri
   past_due: { color: "text-amber-600 bg-amber-50", icon: <Clock size={20} />, label: "Past Due" },
   cancelled: { color: "text-red-600 bg-red-50", icon: <XCircle size={20} />, label: "Cancelled" },
 };
+
+// How many days out counts as "deadline is near" -> triggers the red warning styling
+const DEADLINE_WARNING_DAYS = 5;
 
 function UserDashboard() {
   const { notify } = useToast();
@@ -51,6 +54,19 @@ function UserDashboard() {
   }, []);
 
   const activeSub = subscriptions.find((s) => s.status === "active" || s.status === "trial" || s.status === "past_due");
+
+  // Days remaining until the current period ends (negative = already past due)
+  const daysRemaining = useMemo(() => {
+    if (!activeSub) return null;
+    const end = new Date(activeSub.current_period_end).getTime();
+    return Math.ceil((end - Date.now()) / (1000 * 60 * 60 * 24));
+  }, [activeSub]);
+
+  const deadlineIsNear =
+    activeSub != null &&
+    activeSub.status !== "cancelled" &&
+    daysRemaining != null &&
+    daysRemaining <= DEADLINE_WARNING_DAYS;
 
   async function handleCancel(immediate: boolean) {
     if (!activeSub) return;
@@ -141,7 +157,7 @@ function UserDashboard() {
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Current plan</p>
                 <h2 className="mt-3 text-3xl font-semibold text-slate-900 dark:text-white">Plan #{activeSub.plan_id}</h2>
               </div>
-              <StatusBadge variant={activeSub.status === "active" ? "success" : activeSub.status === "trial" ? "info" : activeSub.status === "past_due" ? "warning" : "danger"}>
+              <StatusBadge variant={deadlineIsNear ? "danger" : activeSub.status === "active" ? "success" : activeSub.status === "trial" ? "info" : activeSub.status === "past_due" ? "warning" : "danger"}>
                 {statusStyles[activeSub.status]?.label || activeSub.status}
               </StatusBadge>
             </div>
@@ -151,9 +167,28 @@ function UserDashboard() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">Billing period start</p>
                 <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{new Date(activeSub.current_period_start).toLocaleDateString()}</p>
               </div>
-              <div className="rounded-[24px] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Next renewal</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{new Date(activeSub.current_period_end).toLocaleDateString()}</p>
+
+              <div
+                className={`rounded-[24px] border p-5 transition-colors ${
+                  deadlineIsNear
+                    ? "border-red-300 bg-red-50 dark:border-red-500/40 dark:bg-red-950/40"
+                    : "border-slate-200/70 bg-slate-50/80 dark:border-slate-700/70 dark:bg-slate-950/50"
+                }`}
+              >
+                <p className={`text-sm ${deadlineIsNear ? "text-red-600 dark:text-red-300" : "text-slate-500 dark:text-slate-400"}`}>
+                  Next renewal
+                </p>
+                <p className={`mt-2 text-lg font-semibold ${deadlineIsNear ? "text-red-700 dark:text-red-200" : "text-slate-900 dark:text-white"}`}>
+                  {new Date(activeSub.current_period_end).toLocaleDateString()}
+                </p>
+                {deadlineIsNear && (
+                  <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-300">
+                    <AlertTriangle size={13} />
+                    {daysRemaining != null && daysRemaining >= 0
+                      ? `Renews in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
+                      : "Renewal is overdue"}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -185,7 +220,7 @@ function UserDashboard() {
                   Cancel immediately
                 </button>
               )}
-              {(activeSub.status === "past_due" || activeSub.cancel_at_period_end) && (
+              {(activeSub.status === "past_due" || activeSub.cancel_at_period_end || deadlineIsNear) && (
                 <button
                   onClick={handleRenew}
                   disabled={actionLoading}

@@ -28,6 +28,9 @@ import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
 
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 
 
 
@@ -115,9 +118,9 @@ element={<Register/>}
 
 
 
-{/* Dashboard */}
+{/* Dashboard - requires login */}
 
-<Route element={<DashboardLayout/>}>
+<Route element={<ProtectedRoute><DashboardLayout/></ProtectedRoute>}>
 
 
 <Route
@@ -134,7 +137,11 @@ element={<Dashboard/>}
 
 path="/customers"
 
-element={<Customers/>}
+element={
+  <ProtectedRoute allow={["admin"]}>
+    <Customers/>
+  </ProtectedRoute>
+}
 
 />
 
@@ -214,11 +221,13 @@ element={<ForgotPassword/>}
 function App(){
   return(
 
-<BrowserRouter>
+<AuthProvider>
+  <BrowserRouter>
 
-<AppContent/>
+  <AppContent/>
 
-</BrowserRouter>
+  </BrowserRouter>
+</AuthProvider>
 
 )
 

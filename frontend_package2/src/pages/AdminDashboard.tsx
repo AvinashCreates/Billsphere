@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { CheckCircle, Clock, XCircle, AlertTriangle, CreditCard, ArrowRight } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -11,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getSubscriptionStats, createPlan, getUpcomingRenewals, getPastDue } from "../assets/services/api";
+import { getSubscriptionStats, getUpcomingRenewals, getPastDue } from "../assets/services/api";
 import { useToast } from "../components/ToastProvider";
 import KpiCard from "../components/KpiCard";
 import AnalyticsChartCard from "../components/AnalyticsChartCard";
@@ -30,9 +31,6 @@ function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const [form, setForm] = useState({ name: "", price: "", billing_interval: "monthly", trial_period_days: "0" });
-  const [creating, setCreating] = useState(false);
 
   const [renewals, setRenewals] = useState<any[]>([]);
   const [pastDue, setPastDue] = useState<any[]>([]);
@@ -93,40 +91,6 @@ function AdminDashboard() {
     loadStats();
     loadSchedule();
   }, []);
-
-  function handleChange(e: any) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
-
-  async function handleCreatePlan(e: any) {
-    e.preventDefault();
-    setError("");
-    setCreating(true);
-
-    try {
-      await createPlan({
-        name: form.name,
-        price: parseFloat(form.price),
-        billing_interval: form.billing_interval,
-        trial_period_days: parseInt(form.trial_period_days || "0", 10),
-      });
-      notify({
-        title: "Plan created",
-        description: `The ${form.name} plan is now available.`,
-        variant: "success",
-      });
-      setForm({ name: "", price: "", billing_interval: "monthly", trial_period_days: "0" });
-      loadStats();
-    } catch (err: any) {
-      notify({
-        title: "Plan creation failed",
-        description: err.message || "Could not create plan.",
-        variant: "error",
-      });
-    } finally {
-      setCreating(false);
-    }
-  }
 
   return (
     <div className="space-y-10">
@@ -219,63 +183,19 @@ function AdminDashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Plan operations</p>
-                <h2 className="mt-3 text-2xl font-semibold text-slate-900 dark:text-white">Create and manage plans</h2>
+                <h2 className="mt-3 text-2xl font-semibold text-slate-900 dark:text-white">Manage plans</h2>
               </div>
-              <StatusBadge variant="info">Live</StatusBadge>
+              <div className="rounded-2xl bg-blue-500/10 p-3 text-blue-600">
+                <CreditCard size={18} />
+              </div>
             </div>
-
-            <form onSubmit={handleCreatePlan} className="mt-8 space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Plan name"
-                  required
-                  value={form.name}
-                  onChange={handleChange}
-                  className="input-field"
-                />
-                <input
-                  type="number"
-                  name="price"
-                  placeholder="Price"
-                  required
-                  step="0.01"
-                  value={form.price}
-                  onChange={handleChange}
-                  className="input-field"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <select
-                  name="billing_interval"
-                  value={form.billing_interval}
-                  onChange={handleChange}
-                  className="input-field"
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-                <input
-                  type="number"
-                  name="trial_period_days"
-                  placeholder="Trial days"
-                  min="0"
-                  value={form.trial_period_days}
-                  onChange={handleChange}
-                  className="input-field"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={creating}
-                className="btn-primary w-full"
-              >
-                {creating ? "Creating plan..." : "Create plan"}
-              </button>
-            </form>
+            <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-400">
+              Plan creation, pricing, and trial configuration now live on the Plans page for a focused view.
+            </p>
+            <Link to="/plans" className="btn-primary mt-6 inline-flex w-full items-center justify-center gap-2">
+              Go to Plan Management
+              <ArrowRight size={16} />
+            </Link>
           </section>
 
           <section className="panel rounded-[24px] p-6">

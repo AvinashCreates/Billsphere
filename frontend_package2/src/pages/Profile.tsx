@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Camera, Save, Sparkles } from "lucide-react";
+import { Camera, Save, Sparkles, ShieldCheck, User as UserIcon, Lock } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/Card";
 import { useToast } from "../components/ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
 
 function Profile() {
+  const { role } = useAuth();
   const user: any = JSON.parse(localStorage.getItem("user") || "{}");
   const [profile, setProfile] = useState({
     name: user.name || "User",
@@ -71,7 +73,21 @@ function Profile() {
               </div>
             )}
             <div>
-              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{profile.name}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{profile.name}</h2>
+                {role && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
+                      role === "admin"
+                        ? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300"
+                        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    }`}
+                  >
+                    {role === "admin" ? <ShieldCheck size={12} /> : <UserIcon size={12} />}
+                    {role === "admin" ? "Admin" : "Customer"}
+                  </span>
+                )}
+              </div>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{profile.email}</p>
               <p className="mt-2 inline-flex items-center rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">{profile.subscription} plan</p>
             </div>
@@ -98,6 +114,16 @@ function Profile() {
               Phone
               <input name="phone" value={profile.phone} onChange={handleChange} className="input-field mt-2" />
             </label>
+
+            {/* Role is set at registration and can never be changed here */}
+            <div className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Account type
+              <div className="input-field mt-2 flex cursor-not-allowed items-center justify-between gap-2 bg-slate-100/80 text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
+                <span className="capitalize">{role || "—"}</span>
+                <Lock size={14} />
+              </div>
+              <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">Account type is fixed at registration and can't be changed here.</p>
+            </div>
           </div>
 
           <div className="space-y-4">

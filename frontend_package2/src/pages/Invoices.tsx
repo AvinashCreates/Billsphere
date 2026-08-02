@@ -6,6 +6,8 @@ import AppShell from "../components/layout/AppShell";
 import DataTable from "../components/table/DataTable";
 import { useToast } from "../components/ToastProvider";
 import EmptyState from "../components/EmptyState";
+import RoleGuard from "../components/RoleGuard";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Invoice {
   id: number;
@@ -16,6 +18,7 @@ interface Invoice {
 }
 
 function Invoices() {
+  const { role } = useAuth();
   const user: any = JSON.parse(localStorage.getItem("user") || "{}");
   const [invoices, setInvoices] = useState<Invoice[]>(user.invoicesList || []);
   const [customer, setCustomer] = useState("");
@@ -84,94 +87,110 @@ function Invoices() {
     [invoices, search]
   );
 
-  const columns = useMemo(
-    () => [
+  // Customers only get a read-only view - no delete/manage action column
+  const columns = useMemo(() => {
+    const base: any[] = [
       { key: 'customer', title: 'Customer', sortable: true },
       { key: 'amount', title: 'Amount', sortable: true, render: (invoice: Invoice) => `$${invoice.amount.toFixed(2)}` },
       { key: 'status', title: 'Status', sortable: true },
       { key: 'date', title: 'Date', sortable: true },
-      { key: 'actions', title: 'Actions', render: (invoice: Invoice) => (
-        <button
-          type="button"
-          onClick={() => deleteInvoice(invoice.id)}
-          className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300"
-        >
-          <Trash2 size={16} />
-          Delete
-        </button>
-      ) },
-    ],
-    []
-  );
+    ];
+
+    if (role === "admin") {
+      base.push({
+        key: 'actions',
+        title: 'Actions',
+        render: (invoice: Invoice) => (
+          <button
+            type="button"
+            onClick={() => deleteInvoice(invoice.id)}
+            className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300"
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
+        ),
+      });
+    }
+
+    return base;
+  }, [role, invoices]);
 
   return (
     <AppShell>
       <div className="fade-in">
       <PageHeader
         eyebrow="Billing"
-        title="Invoices"
-        description="Create polished invoices and keep billing activity visible across your operations."
+        title={role === "admin" ? "Invoices" : "My Invoices"}
+        description={
+          role === "admin"
+            ? "Create polished invoices and keep billing activity visible across your operations."
+            : "Review your invoice history and payment status."
+        }
         action={<span className="inline-flex items-center gap-2"><ReceiptText size={16} />{invoices.length} records</span>}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <Card className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-blue-500/10 p-3 text-blue-600">
-              <FilePlus size={20} />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Create invoice</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Issue clean invoices with full status context.</p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <input
-              value={customer}
-              onChange={(e) => setCustomer(e.target.value)}
-              placeholder="Customer Name"
-              className="input-field"
-              aria-label="Customer name"
-            />
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Amount"
-              className="input-field"
-              aria-label="Invoice amount"
-            />
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="input-field" aria-label="Invoice status">
-              <option>Pending</option>
-              <option>Paid</option>
-              <option>Overdue</option>
-            </select>
-          </div>
-
-          <button onClick={createInvoice} className="btn-primary">
-            <FilePlus size={18} />
-            Create Invoice
-          </button>
-        </Card>
-
-        <Card className="space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:border-amber-900/40 dark:bg-amber-500/10 dark:text-amber-300">
-            <Sparkles size={14} />
-            Revenue pulse
-          </div>
-          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
-            <p className="text-sm text-slate-600 dark:text-slate-400">A quick snapshot of collected revenue from your paid invoices.</p>
-            <div className="mt-4 flex items-end justify-between">
-              <div>
-                <p className="text-3xl font-semibold text-slate-900 dark:text-white">${invoices.filter((invoice) => invoice.status === "Paid").reduce((sum, invoice) => sum + Number(invoice.amount), 0).toFixed(2)}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Collected revenue</p>
+      {/* Only admins can issue new invoices */}
+      <RoleGuard allow={["admin"]}>
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <Card className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-blue-500/10 p-3 text-blue-600">
+                <FilePlus size={20} />
               </div>
-              <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">Healthy flow</div>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Create invoice</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Issue clean invoices with full status context.</p>
+              </div>
             </div>
-          </div>
-        </Card>
-      </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <input
+                value={customer}
+                onChange={(e) => setCustomer(e.target.value)}
+                placeholder="Customer Name"
+                className="input-field"
+                aria-label="Customer name"
+              />
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Amount"
+                className="input-field"
+                aria-label="Invoice amount"
+              />
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="input-field" aria-label="Invoice status">
+                <option>Pending</option>
+                <option>Paid</option>
+                <option>Overdue</option>
+              </select>
+            </div>
+
+            <button onClick={createInvoice} className="btn-primary">
+              <FilePlus size={18} />
+              Create Invoice
+            </button>
+          </Card>
+
+          <Card className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:border-amber-900/40 dark:bg-amber-500/10 dark:text-amber-300">
+              <Sparkles size={14} />
+              Revenue pulse
+            </div>
+            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
+              <p className="text-sm text-slate-600 dark:text-slate-400">A quick snapshot of collected revenue from your paid invoices.</p>
+              <div className="mt-4 flex items-end justify-between">
+                <div>
+                  <p className="text-3xl font-semibold text-slate-900 dark:text-white">${invoices.filter((invoice) => invoice.status === "Paid").reduce((sum, invoice) => sum + Number(invoice.amount), 0).toFixed(2)}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Collected revenue</p>
+                </div>
+                <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">Healthy flow</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </RoleGuard>
 
       <Card className="mt-6">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -194,8 +213,16 @@ function Invoices() {
         {filteredInvoices.length === 0 ? (
           <EmptyState
             title="No invoices found"
-            description="Create your first invoice to start tracking payment progress and revenue performance."
-            primaryAction={{ label: "New invoice", path: "/invoices" }}
+            description={
+              role === "admin"
+                ? "Create your first invoice to start tracking payment progress and revenue performance."
+                : "You don't have any invoices yet. Subscribe to a plan to get started."
+            }
+            primaryAction={
+              role === "admin"
+                ? { label: "New invoice", path: "/invoices" }
+                : { label: "Browse plans", path: "/plans" }
+            }
             icon={<ReceiptText size={24} />}
           />
         ) : (

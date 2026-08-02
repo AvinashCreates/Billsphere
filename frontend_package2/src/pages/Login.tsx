@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { loginUser } from "../assets/services/api";
 import { useToast } from "../components/ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { notify } = useToast();
+  const { refreshUser } = useAuth();
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,6 +24,11 @@ function Login() {
       const result = await loginUser({ email, password });
       localStorage.setItem("access_token", result.access_token);
       localStorage.setItem("loggedIn", "true");
+
+      // Populate AuthContext (user + role) before navigating so the
+      // dashboard/sidebar render with the correct role immediately.
+      await refreshUser();
+
       notify({
         title: "Welcome back",
         description: "You have successfully signed in to BillSphere.",

@@ -2,21 +2,28 @@ import { LayoutDashboard, Users, FileText, CreditCard, Settings, User, LogOut, S
 import { NavLink, useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import { useToast } from "./ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
 
 function Sidebar() {
   const navigate = useNavigate();
   const { notify } = useToast();
+  const { role, logout: authLogout } = useAuth();
 
   const menuItems = [
-    { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
-    { name: "Customers", path: "/customers", icon: <Users size={18} /> },
-    { name: "Invoices", path: "/invoices", icon: <FileText size={18} /> },
-    { name: "Plans", path: "/plans", icon: <CreditCard size={18} /> },
-    { name: "Settings", path: "/settings", icon: <Settings size={18} /> },
+    { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} />, roles: ["admin", "customer"] },
+    { name: "Customers", path: "/customers", icon: <Users size={18} />, roles: ["admin"] },
+    { name: "Invoices", path: "/invoices", icon: <FileText size={18} />, roles: ["admin", "customer"] },
+    { name: "Plans", path: "/plans", icon: <CreditCard size={18} />, roles: ["admin", "customer"] },
+    { name: "Settings", path: "/settings", icon: <Settings size={18} />, roles: ["admin", "customer"] },
   ];
+
+  // Only show nav links the current role is permitted to access
+  const visibleMenuItems = menuItems.filter((item) => !role || item.roles.includes(role));
 
   function logout() {
     localStorage.removeItem("loggedIn");
+    localStorage.removeItem("access_token");
+    authLogout();
     notify({
       title: "Signed out",
       description: "You have safely logged out of the billing workspace.",
@@ -44,7 +51,7 @@ function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-2" aria-label="Sidebar navigation">
-        {menuItems.map((item) => (
+        {visibleMenuItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
