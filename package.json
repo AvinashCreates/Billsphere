@@ -1,0 +1,16 @@
+{
+  "name": "billsphere-runner",
+  "version": "1.0.0",
+  "description": "Billsphere dual server runner for Backend and Frontend",
+  "main": "run.py",
+  "scripts": {
+    "start": "python run.py",
+    "dev": "python run.py",
+    "backend": "cd backend && uvicorn main:app --reload --port 8000",
+    "frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

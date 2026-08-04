@@ -5,8 +5,18 @@
 # Python Cache & Virtual Environments
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 venv/
 .venv/
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Celery Beat Schedule Files
+celerybeat-schedule*
 
 # IDEs & Editors
 .idea/
@@ -15,4 +25,4 @@ venv/
 # Node Modules & Frontend Builds
 node_modules/
 build/
-dist/
+dist/

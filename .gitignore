@@ -1,4 +1,29 @@
-.idea/
+# Environment Variables
+.env
+*.env
+
+# Python & Virtual Environments
 __pycache__/
 *.pyc
-backend/celerybeat-schedule
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Database & Celery Runtime Files
+*.db
+*.sqlite
+*.sqlite3
+celerybeat-schedule*
+
+# Node & Frontend Builds
+node_modules/
+dist/
+build/
+
+# IDEs & OS Files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
