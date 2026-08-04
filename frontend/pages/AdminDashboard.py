@@ -90,7 +90,10 @@ with st.sidebar:
         st.switch_page("pages/Plans.py")
 
     if st.button("🔄 Subscriptions", use_container_width=True):
-        st.info("Subscriptions module coming soon.")
+        st.switch_page("pages/Subscriptions.py")
+
+    if st.button("🧾 Invoices", use_container_width=True):
+        st.switch_page("pages/Invoices.py")
 
     if st.button("👤 Profile", use_container_width=True):
         st.switch_page("pages/Profile.py")
@@ -135,6 +138,7 @@ st.divider()
 
 # ---------------- Quick Actions ----------------
 
+
 st.subheader("⚡ Quick Actions")
 
 q1, q2, q3 = st.columns(3)
@@ -158,12 +162,10 @@ with q2:
 with q3:
 
     if st.button(
-        "🔄 Manage Subscriptions",
+        "🧾 Manage Invoices",
         use_container_width=True
     ):
-        st.info("Subscriptions module coming soon.")
-
-st.divider()
+        st.switch_page("pages/Invoices.py")
 
 # ---------------- Bottom Section ----------------
 
