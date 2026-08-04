@@ -52,3 +52,15 @@ def update_subscription(
     db.commit()
     db.refresh(subscription)
     return subscription
+
+def get_subscription_by_id(
+    db: Session,
+    subscription_id: int,
+):
+    return (
+        db.query(Subscription)
+        .filter(
+            Subscription.id == subscription_id
+        )
+        .first()
+    )
