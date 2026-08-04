@@ -30,8 +30,11 @@ with st.sidebar:
     if st.button("Customers", use_container_width=True):
         st.switch_page("pages/Customers.py")
 
-    if st.button("Plans"):
+    if st.button("Plans", use_container_width=True):
        st.switch_page("pages/Plans.py")
+
+    if st.button("Invoices", use_container_width=True):
+        st.switch_page("pages/Invoices.py")
 
     if st.button("Subscriptions", use_container_width=True):
         st.info("Subscriptions module coming soon.")
@@ -55,7 +58,7 @@ st.divider()
 
 st.subheader("Quick Actions")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("Manage Customers", use_container_width=True):
@@ -64,3 +67,7 @@ with col1:
 with col2:
     if st.button("Manage Plans", use_container_width=True):
         st.switch_page("pages/Plans.py")
+
+with col3:
+    if st.button("Manage Invoices", use_container_width=True):
+        st.switch_page("pages/Invoices.py")
