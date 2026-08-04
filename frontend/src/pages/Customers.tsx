@@ -1,223 +1,459 @@
-import { useMemo, useState, useEffect } from "react";
-import { Search, UserPlus, Trash2, Users, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Users, UserPlus, Trash2, Mail, Globe, Calendar, Filter, Download, ShieldAlert } from "lucide-react";
+import * as XLSX from "xlsx";
+import { getCustomersAdmin, createCustomer, deleteCustomer, getPlans } from "../assets/services/api";
+import { useAuth } from "../contexts/AuthContext";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/common/Card";
+import Skeleton from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
+import { useToast } from "../components/ToastProvider";
 import AppShell from "../components/layout/AppShell";
 import DataTable from "../components/table/DataTable";
-import { useToast } from "../components/ToastProvider";
-import EmptyState from "../components/EmptyState";
-import { getCustomers, createCustomer as apiCreateCustomer, deleteCustomer as apiDeleteCustomer } from "../assets/services/api";
+import StatusBadge from "../components/StatusBadge";
 
-interface Customer {
+interface AdminCustomer {
   id: number;
   name: string;
   email: string;
-  joined: string;
+  billing_country: string;
+  created_at: string;
+  platform: string | null;
+  plan_type: string | null;
+  payment_status: string;
+  current_period_end: string | null;
+  trial_ends_at: string | null;
 }
 
+interface PlanOption {
+  id: number;
+  name: string;
+}
+
+const emptyCustomerForm = { name: "", email: "", billing_country: "US" };
+
 function Customers() {
-  const user: any = JSON.parse(localStorage.getItem("user") || "{}");
-  const [customers, setCustomers] = useState<Customer[]>(user.customersList || []);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [search, setSearch] = useState("");
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const { notify } = useToast();
 
-  function persist(updated: Customer[]) {
-    setCustomers(updated);
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        ...user,
-        customersList: updated,
-        customers: updated.length,
-      })
-    );
-  }
+  const [customers, setCustomers] = useState<AdminCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  function addCustomer() {
-    if (!name.trim() || !email.trim()) {
+  // Filter states
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("");
+  const [planTypeFilter, setPlanTypeFilter] = useState("");
+
+  // Available platforms for dropdown filter
+  const [availablePlatforms, setAvailablePlatforms] = useState<string[]>([]);
+
+  // Add Customer modal / form state
+  const [form, setForm] = useState(emptyCustomerForm);
+  const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadCustomers();
+    loadPlatforms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentStatusFilter, platformFilter, planTypeFilter]);
+
+  async function loadCustomers() {
+    try {
+      setLoading(true);
+      const data = await getCustomersAdmin({
+        payment_status: paymentStatusFilter || undefined,
+        platform: platformFilter || undefined,
+        plan_type: planTypeFilter || undefined,
+      });
+      setCustomers(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load customer list");
       notify({
-        title: "Missing customer data",
-        description: "Please enter both name and email before adding a customer.",
+        title: "Customer load failed",
+        description: err.message,
         variant: "error",
       });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadPlatforms() {
+    try {
+      const plans = await getPlans();
+      const names = Array.from(new Set(plans.map((p: PlanOption) => p.name))) as string[];
+      setAvailablePlatforms(names);
+    } catch (err) {
+      // Ignore fallback if plans cannot be loaded
+    }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  async function handleCreateCustomer(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      await createCustomer(form);
+      notify({
+        title: "Customer Added & Invited",
+        description: `Customer account created. An invite email was sent to ${form.email} to set their password.`,
+        variant: "success",
+      });
+      setForm(emptyCustomerForm);
+      loadCustomers();
+    } catch (err: any) {
+      notify({
+        title: "Could not add customer",
+        description: err.message,
+        variant: "error",
+      });
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleDeleteCustomer(customer: AdminCustomer) {
+    if (!window.confirm(`Delete customer "${customer.name}"? This removes their customer roster entry.`)) {
       return;
     }
 
-    // create on server
-    apiCreateCustomer({ name: name.trim(), email: email.trim(), billing_country: "US" })
-      .then((created: any) => {
-        const createdCustomer: Customer = {
-          id: created.id,
-          name: created.name,
-          email: created.email,
-          joined: new Date(created.created_at).toLocaleDateString(),
-        };
-        const updated = [createdCustomer, ...customers];
-        persist(updated);
-        setName("");
-        setEmail("");
-        notify({
-          title: "Customer added",
-          description: `${createdCustomer.name} was added to the customer roster.`,
-          variant: "success",
-        });
-      })
-      .catch((err) => {
-        notify({ title: "Add failed", description: err.message || "Could not add customer", variant: "error" });
+    setDeletingId(customer.id);
+    try {
+      await deleteCustomer(customer.id);
+      notify({
+        title: "Customer Deleted",
+        description: `Removed "${customer.name}" from customer roster.`,
+        variant: "success",
       });
+      loadCustomers();
+    } catch (err: any) {
+      notify({
+        title: "Deletion Failed",
+        description: err.message,
+        variant: "error",
+      });
+    } finally {
+      setDeletingId(null);
+    }
   }
 
-  function deleteCustomer(id: number) {
-    apiDeleteCustomer(id)
-      .then(() => {
-        const updated = customers.filter((customer) => customer.id !== id);
-        persist(updated);
-        notify({ title: "Customer removed", description: "The customer record has been archived.", variant: "info" });
-      })
-      .catch((err) => {
-        notify({ title: "Delete failed", description: err.message || "Could not delete customer", variant: "error" });
-      });
+  const getBadgeVariant = (status: string): "success" | "warning" | "info" | "danger" | "neutral" => {
+    switch (status) {
+      case "active":
+      case "paid":
+        return "success";
+      case "past_due":
+      case "unpaid":
+        return "warning";
+      case "trial":
+        return "info";
+      case "cancelled":
+        return "danger";
+      default:
+        return "neutral";
+    }
+  };
+
+  const formatStatusLabel = (status: string) => {
+    switch (status) {
+      case "active":
+        return "Paid";
+      case "past_due":
+        return "Unpaid";
+      case "trial":
+        return "Trial";
+      case "cancelled":
+        return "Cancelled";
+      default:
+        return "No Subscription";
+    }
+  };
+
+  function exportToExcel() {
+    const rows = customers.map((c) => ({
+      ID: c.id,
+      Name: c.name,
+      Email: c.email,
+      Country: c.billing_country,
+      Platform: c.platform || "-",
+      "Plan Type": c.plan_type || "-",
+      Status: formatStatusLabel(c.payment_status),
+      "Period End / Trial End": (c.current_period_end || c.trial_ends_at)
+        ? new Date(c.current_period_end || c.trial_ends_at!).toLocaleDateString()
+        : "-",
+      "Created At": new Date(c.created_at).toLocaleString(),
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+    XLSX.writeFile(workbook, `billsphere-customers-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
-  useEffect(() => {
-    // load customers from API on mount
-    getCustomers()
-      .then((list: any[]) => {
-        const mapped = list.map((c) => ({ id: c.id, name: c.name, email: c.email, joined: new Date(c.created_at).toLocaleDateString() }));
-        persist(mapped);
-      })
-      .catch(() => {
-        // keep local fallback
-      });
-  }, []);
-
-  const filteredCustomers = useMemo(
-    () => customers.filter((customer) => customer.name.toLowerCase().includes(search.toLowerCase()) || customer.email.toLowerCase().includes(search.toLowerCase())),
-    [customers, search]
-  );
-
-  const columns = useMemo(
-    () => [
-      { key: 'name', title: 'Name', sortable: true },
-      { key: 'email', title: 'Email', sortable: true },
-      { key: 'joined', title: 'Joined', sortable: true, render: (customer: Customer) => customer.joined },
-      { key: 'tenure', title: 'Tenure', sortable: true, render: (customer: Customer) => {
-        const joinedDate = new Date(customer.joined);
-        const days = Math.max(1, Math.round((Date.now() - joinedDate.getTime()) / (1000 * 60 * 60 * 24)));
-        return `${days} days`;
-      } },
-      { key: 'actions', title: 'Actions', render: (customer: Customer) => (
-        <button
-          type="button"
-          onClick={() => deleteCustomer(customer.id)}
-          className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300"
-        >
-          <Trash2 size={16} />
-          Delete
-        </button>
-      ) },
-    ],
-    []
-  );
+  if (!isAdmin) {
+    return (
+      <AppShell>
+        <EmptyState
+          title="Access Restricted"
+          description="Only administrator accounts are authorized to view and manage customer directories."
+          primaryAction={{ label: "Go to Dashboard", path: "/dashboard" }}
+          icon={<ShieldAlert size={24} />}
+        />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
-      <div className="fade-in">
-      <PageHeader
-        eyebrow="Customer success"
-        title="Customers"
-        description="Manage your accounts with clarity, context, and a premium operational dashboard."
-        action={<span className="inline-flex items-center gap-2"><Users size={16} />{customers.length} accounts</span>}
-      />
+      <div className="fade-in space-y-8">
+        <PageHeader
+          eyebrow="CRM · Administration"
+          title="Customer directory"
+          description="Manage customer accounts, track subscription statuses, and dispatch invite links."
+          action={
+            <span className="inline-flex items-center gap-2">
+              <Users size={16} />
+              {customers.length} Accounts
+            </span>
+          }
+        />
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <Card className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-blue-500/10 p-3 text-blue-600">
-              <UserPlus size={20} />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Add a new customer</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Create customer records quickly and keep the pipeline moving.</p>
-            </div>
+        {error && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300">
+            {error}
           </div>
+        )}
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Customer Name"
-              className="input-field"
-              aria-label="Customer name"
-            />
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Customer Email"
-              className="input-field"
-              aria-label="Customer email"
-            />
-            <button onClick={addCustomer} className="btn-primary w-full">
-              <UserPlus size={18} />
-              Add Customer
+        {/* Add New Customer Form */}
+        <Card title="Add a new customer">
+          <form onSubmit={handleCreateCustomer} className="mt-4 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="e.g. Sarah Connor"
+                  required
+                  value={form.name}
+                  onChange={handleInputChange}
+                  className="input-field mt-1.5"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="e.g. sarah@example.com"
+                  required
+                  value={form.email}
+                  onChange={handleInputChange}
+                  className="input-field mt-1.5"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Country Code
+                </label>
+                <input
+                  type="text"
+                  name="billing_country"
+                  placeholder="e.g. US, IN, UK"
+                  required
+                  maxLength={5}
+                  value={form.billing_country}
+                  onChange={handleInputChange}
+                  className="input-field mt-1.5 uppercase"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                💡 Adding a new email will automatically dispatch an invitation email with a password-set link.
+              </p>
+              <button
+                type="submit"
+                disabled={creating}
+                className="btn-primary inline-flex items-center gap-2 px-6"
+              >
+                <UserPlus size={16} />
+                {creating ? "Adding Customer..." : "Add & Send Invite"}
+              </button>
+            </div>
+          </form>
+        </Card>
+
+        {/* Filter Controls & Customers Table */}
+        <Card title="All customers">
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <Filter size={14} /> Filters:
+            </div>
+
+            <select
+              value={paymentStatusFilter}
+              onChange={(e) => setPaymentStatusFilter(e.target.value)}
+              className="input-field w-auto text-xs"
+            >
+              <option value="">All Payment Statuses</option>
+              <option value="paid">Paid (Active)</option>
+              <option value="unpaid">Unpaid (Past Due)</option>
+              <option value="trial">Trial</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            <select
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value)}
+              className="input-field w-auto text-xs"
+            >
+              <option value="">All Platforms / Plans</option>
+              {availablePlatforms.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={planTypeFilter}
+              onChange={(e) => setPlanTypeFilter(e.target.value)}
+              className="input-field w-auto text-xs"
+            >
+              <option value="">All Plan Intervals</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+
+            {(paymentStatusFilter || platformFilter || planTypeFilter) && (
+              <button
+                onClick={() => {
+                  setPaymentStatusFilter("");
+                  setPlatformFilter("");
+                  setPlanTypeFilter("");
+                }}
+                className="btn-ghost text-xs text-blue-600"
+              >
+                Reset Filters
+              </button>
+            )}
+
+            <button
+              onClick={exportToExcel}
+              className="btn-ghost ml-auto inline-flex items-center gap-2 text-xs"
+            >
+              <Download size={14} />
+              Export to Excel
             </button>
           </div>
-        </Card>
 
-        <Card className="space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300">
-            <Sparkles size={14} />
-            Relationship health
-          </div>
-          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
-            <p className="text-sm text-slate-600 dark:text-slate-400">Your customer roster is growing steadily and all records are in one place.</p>
-            <div className="mt-4 flex items-end justify-between">
-              <div>
-                <p className="text-3xl font-semibold text-slate-900 dark:text-white">{customers.length}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Registered customers</p>
-              </div>
-              <div className="rounded-full bg-blue-500/10 px-3 py-1 text-sm font-medium text-blue-700 dark:text-blue-300">Customer insights</div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <Card className="mt-6">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Customer list</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Search, review, and manage customer accounts all from one dashboard.</p>
-          </div>
-          <div className="flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/70 px-3 py-2 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/70">
-            <Search size={18} className="text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search customers"
-              className="w-40 border-0 bg-transparent outline-none"
-              aria-label="Search customers"
+          {loading ? (
+            <Skeleton className="h-64 rounded-[24px]" />
+          ) : customers.length === 0 ? (
+            <EmptyState
+              title="No customers found"
+              description="No customer records match your current filter selection or roster."
+              icon={<Users size={24} />}
             />
-          </div>
-        </div>
-
-        {filteredCustomers.length === 0 ? (
-          <EmptyState
-            title="No customers available"
-            description="Add your first customer to start tracking accounts and revenue health."
-            primaryAction={{ label: "Add customer", path: "/customers" }}
-            icon={<Users size={24} />}
-          />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={filteredCustomers}
-            searchable
-            pageSize={10}
-          />
-        )}
-      </Card>
+          ) : (
+            <DataTable
+              columns={[
+                { key: "id", title: "ID" },
+                {
+                  key: "name",
+                  title: "Customer",
+                  render: (c: AdminCustomer) => (
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{c.name}</p>
+                      <p className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                        <Mail size={12} /> {c.email}
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: "billing_country",
+                  title: "Country",
+                  render: (c: AdminCustomer) => (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
+                      <Globe size={12} className="text-slate-400" /> {c.billing_country}
+                    </span>
+                  ),
+                },
+                {
+                  key: "platform",
+                  title: "Platform",
+                  render: (c: AdminCustomer) => (
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {c.platform || <span className="text-xs text-slate-400">None</span>}
+                    </span>
+                  ),
+                },
+                {
+                  key: "plan_type",
+                  title: "Billing Cycle",
+                  render: (c: AdminCustomer) => (
+                    <span className="capitalize text-slate-600 dark:text-slate-300">
+                      {c.plan_type || "—"}
+                    </span>
+                  ),
+                },
+                {
+                  key: "payment_status",
+                  title: "Status",
+                  render: (c: AdminCustomer) => (
+                    <StatusBadge variant={getBadgeVariant(c.payment_status)}>
+                      {formatStatusLabel(c.payment_status)}
+                    </StatusBadge>
+                  ),
+                },
+                {
+                  key: "current_period_end",
+                  title: "Renewal / Trial End",
+                  render: (c: AdminCustomer) => {
+                    const dateVal = c.current_period_end || c.trial_ends_at;
+                    if (!dateVal) return <span className="text-xs text-slate-400">—</span>;
+                    return (
+                      <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
+                        <Calendar size={12} />
+                        {new Date(dateVal).toLocaleDateString()}
+                      </span>
+                    );
+                  },
+                },
+                {
+                  key: "actions",
+                  title: "Actions",
+                  render: (c: AdminCustomer) => (
+                    <button
+                      onClick={() => handleDeleteCustomer(c)}
+                      disabled={deletingId === c.id}
+                      className="btn-ghost inline-flex items-center gap-1 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-40"
+                      title="Delete Customer"
+                    >
+                      <Trash2 size={14} />
+                      <span className="text-xs font-semibold">Delete</span>
+                    </button>
+                  ),
+                },
+              ]}
+              data={customers}
+            />
+          )}
+        </Card>
       </div>
     </AppShell>
   );

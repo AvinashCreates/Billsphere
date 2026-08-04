@@ -9,5 +9,7 @@ class Plan(Base):
     name = Column(String, nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
     billing_interval = Column(String, nullable=False)  # "monthly" or "yearly"
-    trial_period_days = Column(Integer, nullable=False, default=0)  # 0 = no trial
+    trial_period_days = Column(Integer, nullable=False, default=0)
+    status = Column(String, nullable=False, default="active")  # active | inactive | deleted
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True)

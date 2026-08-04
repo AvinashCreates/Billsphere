@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 from app.workers.celery_app import celery_app
 from app.core.email import send_email
@@ -35,6 +36,16 @@ def send_deadline_reminder(self, customer_email: str, customer_name: str, plan_n
     return {"sent_to": customer_email, "type": "deadline_reminder", "days_left": days_left}
 
 
+@celery_app.task(name="app.workers.email_tasks.send_customer_invite_email", bind=True, max_retries=3, default_retry_delay=60)
+def send_customer_invite_email(self, customer_email: str, customer_name: str, invite_token: str):
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    set_password_link = f"{frontend_url}/set-password?token={invite_token}"
+    subject, html = templates.customer_invite_email(customer_name, set_password_link)
+    if not send_email(customer_email, subject, html):
+        raise self.retry()
+    return {"sent_to": customer_email, "type": "customer_invite"}
+
+
 REMINDER_WINDOWS_DAYS = [3, 1]  # send a reminder 3 days out and again 1 day out
 
 
@@ -58,11 +69,14 @@ def check_upcoming_deadlines():
         )
 
         for sub in active_subs:
-            days_left = (sub.current_period_end - now).days
+            period_end = sub.current_period_end
+            if period_end.tzinfo is None:
+                period_end = period_end.replace(tzinfo=timezone.utc)
+            days_left = (period_end - now).days
             if days_left not in REMINDER_WINDOWS_DAYS:
                 continue
 
-            reminder_tag = f"reminder.deadline_{days_left}d:{sub.current_period_end.isoformat()}"
+            reminder_tag = f"reminder.deadline_{days_left}d:{period_end.isoformat()}"
 
             already_sent = (
                 db.query(AuditLog)
@@ -83,7 +97,7 @@ def check_upcoming_deadlines():
 
             send_deadline_reminder.delay(
                 customer.email, customer.name, plan.name,
-                sub.current_period_end.isoformat(), days_left,
+                period_end.isoformat(), days_left,
             )
 
             db.add(AuditLog(
@@ -98,4 +112,4 @@ def check_upcoming_deadlines():
         return {"queued_subscription_ids": queued, "checked_at": now.isoformat()}
 
     finally:
-        db.close()
+        db.close()

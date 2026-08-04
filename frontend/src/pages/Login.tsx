@@ -3,9 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { loginUser } from "../assets/services/api";
 import { useToast } from "../components/ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,8 +22,7 @@ function Login() {
 
     try {
       const result = await loginUser({ email, password });
-      localStorage.setItem("access_token", result.access_token);
-      localStorage.setItem("loggedIn", "true");
+      await login(result.access_token);
       notify({
         title: "Welcome back",
         description: "You have successfully signed in to BillSphere.",

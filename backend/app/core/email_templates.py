@@ -291,3 +291,30 @@ def deadline_reminder_email(customer_name: str, plan_name: str, deadline_str: st
       ])}
     """
     return subject, _wrapper(header, body)
+
+
+def customer_invite_email(customer_name: str, set_password_link: str) -> tuple[str, str]:
+    subject = f"You've been added to {BRAND_NAME} — set your password"
+    header = _header(
+        "You're",
+        "All Set! &#128273;",
+        "An account has been created for you. Set a password to log in.",
+        USER_CHECK_ICON,
+    )
+    body = f"""
+      <div style="text-align:center; margin:8px 0 4px;">
+        <p style="margin:0; color:{TEXT_COLOR}; font-size:18px; font-weight:800;">
+          Hi <span style="color:{PURPLE};">{customer_name}</span>,
+        </p>
+        <p style="margin:8px 0 0; color:{MUTED_COLOR}; font-size:13px;">
+          An account has been created for you on {BRAND_NAME}. Click below to set your password and get started.
+        </p>
+      </div>
+      <div style="text-align:center;">
+        {_button("Set Your Password", set_password_link)}
+      </div>
+      <p style="color:{MUTED_COLOR}; font-size:12px; line-height:1.6; margin:12px 0 0; text-align:center;">
+        This link expires in 48 hours. If you didn't request this, you can ignore this email.
+      </p>
+    """
+    return subject, _wrapper(header, body)

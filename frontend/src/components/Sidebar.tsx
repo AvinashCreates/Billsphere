@@ -2,21 +2,24 @@ import { LayoutDashboard, Users, FileText, CreditCard, Settings, User, LogOut, S
 import { NavLink, useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import { useToast } from "./ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
 
 function Sidebar() {
   const navigate = useNavigate();
   const { notify } = useToast();
+  const { user, logout: authLogout } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const menuItems = [
     { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
-    { name: "Customers", path: "/customers", icon: <Users size={18} /> },
+    ...(isAdmin ? [{ name: "Customers", path: "/customers", icon: <Users size={18} /> }] : []),
     { name: "Invoices", path: "/invoices", icon: <FileText size={18} /> },
     { name: "Plans", path: "/plans", icon: <CreditCard size={18} /> },
     { name: "Settings", path: "/settings", icon: <Settings size={18} /> },
   ];
 
   function logout() {
-    localStorage.removeItem("loggedIn");
+    authLogout();
     notify({
       title: "Signed out",
       description: "You have safely logged out of the billing workspace.",

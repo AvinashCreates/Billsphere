@@ -189,3 +189,79 @@ export async function createPlan(data: { name: string; price: number; billing_in
   if (!response.ok) throw new Error(result.detail || "Failed to create plan");
   return result;
 }
+// ---- Admin: plan management ----
+export async function getAdminPlans(filters?: { status?: string; billing_interval?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.status) params.append("status", filters.status);
+  if (filters?.billing_interval) params.append("billing_interval", filters.billing_interval);
+  const query = params.toString() ? `?${params.toString()}` : "";
+
+  const response = await fetch(`${API_URL}/plans/admin${query}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error("Failed to load plans");
+  return response.json();
+}
+
+export async function updatePlan(
+  id: number,
+  data: Partial<{ name: string; price: number; billing_interval: string; trial_period_days: number }>
+) {
+  const response = await fetch(`${API_URL}/plans/${id}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to update plan");
+  return result;
+}
+
+export async function setPlanStatus(id: number, status: "active" | "inactive") {
+  const response = await fetch(`${API_URL}/plans/${id}/status`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ status }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to update plan status");
+  return result;
+}
+
+export async function deletePlan(id: number) {
+  const response = await fetch(`${API_URL}/plans/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to delete plan");
+  return result;
+}
+
+// ---- Admin: customers with plan/payment info ----
+export async function getCustomersAdmin(filters?: { payment_status?: string; platform?: string; plan_type?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.payment_status) params.append("payment_status", filters.payment_status);
+  if (filters?.platform) params.append("platform", filters.platform);
+  if (filters?.plan_type) params.append("plan_type", filters.plan_type);
+  const query = params.toString() ? `?${params.toString()}` : "";
+
+  const response = await fetch(`${API_URL}/customers/admin${query}`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error("Failed to load customers");
+  return response.json();
+}
+
+// ---- Set password (from invite link) ----
+export async function setPassword(token: string, newPassword: string) {
+  const response = await fetch(`${API_URL}/auth/set-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Could not set password");
+  return result; // { access_token, token_type }
+}
+

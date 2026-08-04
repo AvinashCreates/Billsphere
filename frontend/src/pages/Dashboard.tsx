@@ -54,10 +54,15 @@ function Dashboard() {
   }
 
   return (
-    <AppShell>
-      {role === "admin" ? <AdminDashboard /> : <UserDashboard />}
-    </AppShell>
-  );
+  <AppShell>
+    <div className="mb-4 flex justify-end">
+      <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-slate-50/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 dark:border-slate-700/70 dark:bg-slate-900/70 dark:text-slate-300">
+        {role === "admin" ? "Admin" : "Customer"}
+      </span>
+    </div>
+    {role === "admin" ? <AdminDashboard /> : <UserDashboard />}
+  </AppShell>
+);
 }
 
 export default Dashboard;

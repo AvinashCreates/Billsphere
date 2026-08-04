@@ -1,30 +1,31 @@
-# Billsphere - Subscription & Billing Platform
+# ⚡ BillSphere - Subscription & Billing Management Platform
 
-Billsphere is a full-stack automated subscription, billing, and invoicing management platform built with a **FastAPI** backend and a **React + Vite + TypeScript** frontend.
+BillSphere is a full-stack automated subscription, billing, customer invoicing, and revenue operations platform built with **FastAPI** (Python), **React + Vite + TypeScript**, **Redis**, **Celery Workers & Beat Scheduler**, and **PostgreSQL / SQLite**.
 
 ---
 
 ## 📋 System Prerequisites
 
-Before running the application, ensure you have the following installed on your machine:
+Ensure the following tools are installed on your environment before launching:
 
-- **Python 3.10+** (with `pip` and `venv`)
+- **Python 3.10+** (with `pip` & `venv`)
 - **Node.js v18+** & **npm v9+**
-- **Redis Server** (v6.0+) — Required as the message broker for Celery background tasks (email dispatch & scheduled subscription billing checks).
+- **Redis Server** (v6.0+) — Message broker for Celery background tasks & beat schedulers.
+- **Docker & Docker Compose** *(Optional for full containerized deployment)*
 
 ---
 
-## ⚙️ Environment Configuration (`.env`)
+## ⚙️ Environment Configuration (`backend/.env`)
 
 Create a file named `.env` inside the `backend/` directory (`backend/.env`). You can use `backend/.env.example` as a template.
 
-### `.env` File Template & Parameter Details
+### `.env` File Parameters
 
 ```ini
 # ==========================================
 # Database Configuration
 # ==========================================
-# SQLite Database (default for quick local dev)
+# SQLite Database (Default for local development)
 DATABASE_URL=sqlite:///./billsphere.db
 
 # PostgreSQL (Alternative for production/testing)
@@ -32,10 +33,10 @@ DATABASE_URL=sqlite:///./billsphere.db
 # DB_PORT=5432
 # DB_NAME=billing_platform
 # DB_USER=postgres
-# DB_PASSWORD=your_password
+# DB_PASSWORD=your_postgres_password
 
 # ==========================================
-# Security & JWT Token Configuration
+# JWT Security & Authentication
 # ==========================================
 JWT_SECRET_KEY=your_generated_secure_jwt_secret_key_here
 SECRET_KEY=your_generated_secure_secret_key_here
@@ -43,121 +44,123 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 # ==========================================
-# Redis & Celery Worker Configuration
+# Redis & Celery Message Broker
 # ==========================================
-# Connection URL for local Redis instance
 REDIS_URL=redis://localhost:6379/0
 
 # ==========================================
-# SMTP Email Configuration
+# SMTP Email Service Configuration
 # ==========================================
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASSWORD=your_gmail_app_password
 EMAIL_FROM=your_email@gmail.com
+
+# ==========================================
+# Frontend Application URL (for Email Links)
+# ==========================================
+FRONTEND_URL=http://localhost:5173
 ```
 
-### 🔴 Mandatory Configuration Requirements
-
-1. **Redis URL (`REDIS_URL`)**:
-   - Must point to an active Redis instance. Default: `redis://localhost:6379/0`.
-   - If Redis is not running, Celery workers and background email sending tasks will fail to connect.
-
-2. **Mail Configuration (`SMTP_*`)**:
-   - `SMTP_HOST`: `smtp.gmail.com` (or your custom SMTP host).
-   - `SMTP_PORT`: `587` (TLS) or `465` (SSL).
-   - `SMTP_USER`: Sender email address (e.g., `support.billsphere@gmail.com`).
-   - `SMTP_PASSWORD`: **Gmail App Password** (16-character passcode).
-     > 💡 **Note for Gmail Users**: You cannot use your regular Gmail password. You must enable 2-Step Verification on your Google Account and generate an **App Password** via [Google Account Security Settings](https://myaccount.google.com/apppasswords).
-   - `EMAIL_FROM`: Display email address for sent invoice/welcome emails.
-
-3. **Database URL (`DATABASE_URL`)**:
-   - Defaults to SQLite (`sqlite:///./billsphere.db`). The database file will automatically be created on launch.
+> 💡 **Gmail SMTP Setup Note**: You must enable **2-Step Verification** on your Google Account and generate an **App Password** via [Google Security Settings](https://myaccount.google.com/apppasswords). Use this 16-character passcode for `SMTP_PASSWORD`.
 
 ---
 
-## 🚀 Running the Application Locally
+## 🚀 Step-by-Step Commands to Run the Project
 
-### 1️⃣ Start Redis Server
-Ensure Redis is running locally on port `6379`:
-- **Windows (WSL / Native Redis service)**: `redis-server`
-- **Docker**: `docker run -p 6379:6379 -d redis`
-- **Mac**: `brew services start redis`
+To run BillSphere locally, open separate terminal windows for each service:
 
----
-
-### 2️⃣ Backend Setup & Execution
-
-Navigate into the `backend/` directory:
+### 1️⃣ Terminal 1: Redis Server
+Start the local Redis server instance on default port `6379`:
 
 ```bash
+# Option A: Local Redis Service
+redis-server
+
+# Option B: Docker Container
+docker run -p 6379:6379 -d redis:7-alpine
+```
+
+---
+
+### 2️⃣ Terminal 2: FastAPI Backend Server
+Navigate into the `backend/` directory, activate virtual environment, install dependencies, run migrations, and launch Uvicorn:
+
+```bash
+# Navigate to backend directory
 cd backend
-```
 
-#### A. Create and Activate Virtual Environment
-```bash
-# Windows
+# Create & activate Python virtual environment
+# On Windows:
 python -m venv .venv
 .venv\Scripts\activate
 
-# Linux / Mac
+# On Linux / Mac:
 python3 -m venv .venv
 source .venv/bin/activate
-```
 
-#### B. Install Backend Dependencies
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-#### C. Start FastAPI Backend Server
-```bash
+# Run database table migrations
+python migrate_plan_status.py
+
+# Launch FastAPI Server
 python -m uvicorn main:app --reload --port 8000
 ```
-> The API server will run at: `http://localhost:8000`  
-> Interactive API Docs (Swagger): `http://localhost:8000/docs`
+> 🌐 Backend API running at: `http://localhost:8000`  
+> 📖 Swagger API Documentation: `http://localhost:8000/docs`
 
-#### D. Start Celery Worker (In a separate terminal tab/window)
+---
+
+### 3️⃣ Terminal 3: Celery Worker (Email Queue Listener)
+Launch Celery worker process to process asynchronous background tasks (Welcome emails, Invite links, Confirmation emails):
+
 ```bash
-# Windows
+cd backend
+.venv\Scripts\activate   # (or source .venv/bin/activate on Linux/Mac)
+
+# On Windows:
 celery -A app.workers.celery_app worker --loglevel=info -P solo
 
-# Linux / Mac
+# On Linux / Mac:
 celery -A app.workers.celery_app worker --loglevel=info
 ```
 
-#### E. Start Celery Beat Scheduler (In a separate terminal tab/window)
+---
+
+### 4️⃣ Terminal 4: Celery Beat (Scheduled Deadline Reminders)
+Launch Celery Beat scheduler to automatically check for upcoming renewal deadlines daily:
+
 ```bash
+cd backend
+.venv\Scripts\activate   # (or source .venv/bin/activate on Linux/Mac)
+
 celery -A app.workers.celery_app beat --loglevel=info
 ```
 
 ---
 
-### 3️⃣ Frontend Setup & Execution
-
-Navigate into the `frontend/` directory:
+### 5️⃣ Terminal 5: Vite React Frontend
+Navigate into `frontend/` directory, install node modules, and start the development server:
 
 ```bash
 cd frontend
-```
 
-#### A. Install Node Dependencies
-```bash
+# Install node dependencies
 npm install
-```
 
-#### B. Start Frontend Development Server
-```bash
+# Start Vite React development server
 npm run dev
 ```
-> The React Frontend will run at: `http://localhost:5173`
+> 🌐 Frontend application running at: `http://localhost:5173`
 
 ---
 
-## 🐳 Docker Setup (Alternative)
+## 🐳 Running with Docker Compose (Alternative)
 
-You can run the entire stack (FastAPI, PostgreSQL, Redis, Celery Worker, Celery Beat) using Docker Compose:
+You can spin up the entire application stack (FastAPI Backend, Redis, Celery Worker, Celery Beat) in containerized mode with a single command:
 
 ```bash
 docker-compose up --build
@@ -165,14 +168,44 @@ docker-compose up --build
 
 ---
 
-## 🛠️ Summary of Required Services
+## 🛠️ Summary of Required Active Terminals
 
-To run Billsphere smoothly without error, ensure the following processes are active:
+| Service | Terminal Location | Command | Listening Address / Details |
+| :--- | :--- | :--- | :--- |
+| **Redis** | Any | `redis-server` / `docker run -p 6379:6379 redis` | `localhost:6379` |
+| **FastAPI Backend** | `backend/` | `python -m uvicorn main:app --reload` | `http://localhost:8000` |
+| **Celery Worker** | `backend/` | `celery -A app.workers.celery_app worker --loglevel=info -P solo` | Task Queue Listener |
+| **Celery Beat** | `backend/` | `celery -A app.workers.celery_app beat --loglevel=info` | Daily Renewal Cron |
+| **React Frontend** | `frontend/` | `npm run dev` | `http://localhost:5173` |
 
-| Service | Port / Details | Command |
-| :--- | :--- | :--- |
-| **Redis** | `6379` | `redis-server` / Docker |
-| **FastAPI Backend** | `8000` | `uvicorn main:app --reload` |
-| **Celery Worker** | Background Email Queue | `celery -A app.workers.celery_app worker --loglevel=info -P solo` |
-| **Celery Beat** | Scheduled Billing Tasks | `celery -A app.workers.celery_app beat --loglevel=info` |
-| **Vite Frontend** | `5173` | `npm run dev` |
+---
+
+## 📁 Project Structure
+
+```
+Billsphere/
+├── backend/
+│   ├── app/
+│   │   ├── api/             # FastAPI Endpoint Routers (auth, customers, plans, subscriptions, schedule)
+│   │   ├── core/            # Security, JWT, Dependencies & HTML Email Templates
+│   │   ├── database/        # Database session & engine setup
+│   │   ├── models/          # SQLAlchemy Database Models (User, Customer, Plan, Subscription, AuditLog)
+│   │   ├── schemas/         # Pydantic Request/Response Models
+│   │   └── workers/         # Celery App Configuration & Email Background Tasks
+│   ├── .env.example         # Template for Backend Environment Variables
+│   ├── Dockerfile           # Backend Container Image Definition
+│   ├── main.py              # Application Entrypoint & CORS Middleware
+│   ├── migrate_plan_status.py # Database Migration Script
+│   └── requirements.txt     # Python Package Dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── assets/          # API Service Layer (`api.ts`)
+│   │   ├── components/      # Shared Reusable UI Components (DataTable, KpiCard, StatusBadge, Sidebar)
+│   │   ├── contexts/        # React Contexts (`AuthContext`, `ThemeContext`)
+│   │   ├── layouts/         # App Layout Shell (`DashboardLayout`)
+│   │   ├── pages/           # Views (AdminDashboard, UserDashboard, Customers, Plans, Invoices, SetPassword)
+│   │   └── style.css        # Central Design System Tokens & Tailwind CSS Configuration
+│   └── package.json         # Node Dependencies & Scripts
+├── docker-compose.yml       # Docker Multi-Container Orchestration Setup
+└── README.md                # Comprehensive Documentation & Setup Guide
+```

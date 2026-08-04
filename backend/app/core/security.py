@@ -3,7 +3,7 @@ from jose import jwt
 from datetime import datetime, timedelta, timezone
 import os
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY") or os.getenv("SECRET_KEY", "supersecretkey_billsphere")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -23,3 +23,19 @@ def create_access_token(data: dict):
 
 def decode_access_token(token: str):
     return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+
+def create_invite_token(email: str) -> str:
+    """A longer-lived token used only for the 'set your password' link — separate
+    purpose from a login access token, so it can't be reused to authenticate."""
+    to_encode = {"sub": email, "purpose": "set_password"}
+    expire = datetime.now(timezone.utc) + timedelta(hours=48)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_invite_token(token: str) -> str:
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    if payload.get("purpose") != "set_password":
+        raise ValueError("Invalid token purpose")
+    return payload["sub"]

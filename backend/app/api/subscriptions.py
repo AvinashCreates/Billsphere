@@ -15,6 +15,7 @@ from app.schemas.subscription import (
 )
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
+from app.workers.email_tasks import send_subscription_confirmation
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
@@ -117,6 +118,19 @@ def subscribe(
     db.refresh(new_sub)
 
     log_event(db, new_sub.id, f"subscription.created:{status_value}", current_user.email)
+
+    # Trigger Celery subscription confirmation email task
+    try:
+        send_subscription_confirmation.delay(
+            customer.email,
+            customer.name,
+            plan.name,
+            plan.billing_interval,
+            period_end.isoformat(),
+        )
+    except Exception as e:
+        print(f"Failed to queue subscription confirmation email task: {e}")
+
     return new_sub
 
 

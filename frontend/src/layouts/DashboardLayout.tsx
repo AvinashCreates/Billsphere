@@ -1,11 +1,26 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, Navigate } from "react-router-dom";
 import { ChevronRight, LayoutGrid } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import ThemeToggle from "../components/ThemeToggle";
+import { useAuth } from "../contexts/AuthContext";
+import Skeleton from "../components/Skeleton";
 
 function DashboardLayout() {
   const location = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
   const title = location.pathname.replace("/", "").replace(/(^|\/)(.)/g, (_, __, ch) => ch.toUpperCase()) || "Dashboard";
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-8">
+        <Skeleton className="h-48 w-96 rounded-[28px]" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
 
   return (
     <div className="flex min-h-screen bg-transparent">

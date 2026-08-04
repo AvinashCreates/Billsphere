@@ -27,6 +27,7 @@ import Plans from "./pages/Plans";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
+import SetPassword from "./pages/SetPassword";
 
 
 
@@ -57,6 +58,7 @@ const publicPages = [
   "/login",
   "/register",
   "/forgot-password",
+  "/set-password",
 ];
 
 const showNavbar = publicPages.includes(location.pathname);
@@ -186,11 +188,13 @@ element={<Profile/>}
 
 
 <Route
-
 path="/forgot-password"
-
 element={<ForgotPassword/>}
+/>
 
+<Route
+path="/set-password"
+element={<SetPassword/>}
 />
 
 
