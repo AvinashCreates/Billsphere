@@ -30,7 +30,46 @@ from app.repositories.invoice_repository import (
 from app.repositories.payment_repository import create_payment
 from app.repositories.audit_log_repository import create_audit_log
 
+from datetime import datetime, UTC, timedelta
 
+from app.models.invoice import Invoice
+
+
+def generate_invoice(
+    db: Session,
+    subscription_id: int,
+    user_id: int,
+    amount: float,
+    billing_period_start: datetime,
+    billing_period_end: datetime,
+):
+    """
+    Generate an invoice for a newly created subscription.
+    This function is intended to be called by the Subscription module.
+    """
+
+    invoice = Invoice(
+        subscription_id=subscription_id,
+        user_id=user_id,
+        billing_period_start=billing_period_start,
+        billing_period_end=billing_period_end,
+        due_date=billing_period_end + timedelta(days=7),
+        plan_fee=amount,
+        proration_amount=0,
+        tax_amount=0,
+        usage_charges=0,
+        total_amount=amount,
+        status="pending",
+        payment_status="unpaid",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+
+    db.add(invoice)
+    db.commit()
+    db.refresh(invoice)
+
+    return invoice
 # ---------------------------------------------------------------------------
 # Invoice statuses that are valid for payment
 # ---------------------------------------------------------------------------
