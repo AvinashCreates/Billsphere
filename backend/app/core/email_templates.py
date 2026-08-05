@@ -317,4 +317,128 @@ def customer_invite_email(customer_name: str, set_password_link: str) -> tuple[s
         This link expires in 48 hours. If you didn't request this, you can ignore this email.
       </p>
     """
-    return subject, _wrapper(header, body)
+    return subject, _wrapper(header, body)
+def trial_activated_email(customer_name: str, plan_name: str, trial_days: int, trial_end_str: str) -> tuple[str, str]:
+    subject = f"Your {trial_days}-day trial of {plan_name} has started!"
+    header = _header(
+        "Trial",
+        "Activated! &#9203;",
+        f"Enjoy full access to {plan_name} for {trial_days} days, on us.",
+        BELL_ICON,
+    )
+    body = f"""
+      <div style="text-align:center; margin:8px 0 4px;">
+        <p style="margin:0; color:{TEXT_COLOR}; font-size:18px; font-weight:800;">
+          Hi <span style="color:{PURPLE};">{customer_name}</span>,
+        </p>
+        <p style="margin:8px 0 0; color:{MUTED_COLOR}; font-size:13px;">
+          Your free trial of <strong style="color:{TEXT_COLOR};">{plan_name}</strong> is now active.
+        </p>
+      </div>
+      {_stat_row([
+          _stat_cell("Plan", plan_name, PURPLE, "&#128278;"),
+          _stat_cell("Trial Length", f"{trial_days} days", PURPLE, "&#9203;"),
+          _stat_cell("Trial Ends", trial_end_str, TEXT_COLOR, "&#128197;"),
+      ])}
+      <div style="text-align:center;">
+        {_button("Manage Trial")}
+      </div>
+      <p style="color:{MUTED_COLOR}; font-size:12px; line-height:1.6; margin:12px 0 0; text-align:center;">
+        You can continue to a paid plan anytime from your dashboard, before or after the trial ends.
+      </p>
+    """
+    return subject, _wrapper(header, body)
+
+
+def past_due_email(customer_name: str, plan_name: str, due_date_str: str) -> tuple[str, str]:
+    subject = f"Action needed — your {plan_name} plan is past due"
+    header = _header(
+        "Payment",
+        "Past Due &#9888;",
+        f"Your {plan_name} plan needs your attention to keep running.",
+        BELL_ICON,
+    )
+    body = f"""
+      <div style="text-align:center; margin:8px 0 4px;">
+        <p style="margin:0; color:{TEXT_COLOR}; font-size:18px; font-weight:800;">
+          Hi <span style="color:{PURPLE};">{customer_name}</span>,
+        </p>
+        <p style="margin:8px 0 0; color:{MUTED_COLOR}; font-size:13px;">
+          Your <strong style="color:{TEXT_COLOR};">{plan_name}</strong> plan was due on {due_date_str} and hasn't been renewed yet.
+        </p>
+      </div>
+      <table role="presentation" width="100%" style="background-color:#FEF2F2; border-left:4px solid #DC2626; border-radius:6px; margin:0 0 20px;">
+        <tr>
+          <td style="padding:16px 20px;">
+            <p style="margin:0; color:#DC2626; font-size:15px; font-weight:700;">
+              Renew now to avoid losing access
+            </p>
+          </td>
+        </tr>
+      </table>
+      <div style="text-align:center;">
+        {_button("Renew Now")}
+      </div>
+    """
+    return subject, _wrapper(header, body)
+
+
+def cancellation_email(customer_name: str, plan_name: str, immediate: bool, effective_date_str: str) -> tuple[str, str]:
+    subject = f"Your {plan_name} plan has been cancelled" if immediate else f"Your {plan_name} plan is set to cancel"
+    header = _header(
+        "Subscription",
+        "Cancelled" if immediate else "Cancelling Soon",
+        f"We're sorry to see you go from {plan_name}.",
+        USER_CHECK_ICON,
+    )
+    timing_text = (
+        f"Your access ended immediately, effective {effective_date_str}."
+        if immediate
+        else f"Your plan stays active until {effective_date_str}, then it will cancel."
+    )
+    body = f"""
+      <div style="text-align:center; margin:8px 0 4px;">
+        <p style="margin:0; color:{TEXT_COLOR}; font-size:18px; font-weight:800;">
+          Hi <span style="color:{PURPLE};">{customer_name}</span>,
+        </p>
+        <p style="margin:8px 0 0; color:{MUTED_COLOR}; font-size:13px;">
+          {timing_text}
+        </p>
+      </div>
+      <div style="text-align:center;">
+        {_button("Browse Plans")}
+      </div>
+      <p style="color:{MUTED_COLOR}; font-size:12px; line-height:1.6; margin:12px 0 0; text-align:center;">
+        Changed your mind? You can resubscribe anytime from your dashboard.
+      </p>
+    """
+    return subject, _wrapper(header, body)
+
+
+def reactivation_email(customer_name: str, plan_name: str, new_period_end_str: str) -> tuple[str, str]:
+    subject = f"Your {plan_name} plan is active again!"
+    header = _header(
+        "Plan",
+        "Reactivated! &#9989;",
+        f"Good news — {plan_name} is up and running again.",
+        ENVELOPE_ICON,
+    )
+    body = f"""
+      <div style="text-align:center; margin:8px 0 4px;">
+        <p style="margin:0; color:{TEXT_COLOR}; font-size:18px; font-weight:800;">
+          Hi <span style="color:{PURPLE};">{customer_name}</span>,
+        </p>
+        <p style="margin:8px 0 0; color:{MUTED_COLOR}; font-size:13px;">
+          Your <strong style="color:{TEXT_COLOR};">{plan_name}</strong> plan is now active again.
+        </p>
+      </div>
+      {_stat_row([
+          _stat_cell("Plan", plan_name, PURPLE, "&#128278;"),
+          _stat_cell("Active Until", new_period_end_str, PURPLE, "&#128197;"),
+          _stat_cell("Status", "Active", "#059669", "&#9989;"),
+      ])}
+      <div style="text-align:center;">
+        {_button("View Dashboard")}
+      </div>
+    """
+    return subject, _wrapper(header, body)

@@ -1,36 +1,40 @@
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CreditCard, CheckCircle, Clock, XCircle } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { getMySubscriptions, cancelSubscription, renewSubscription } from "../assets/services/api";
+import { CreditCard, CheckCircle, Clock, XCircle, Hourglass, ArrowUpCircle } from "lucide-react";
+import {
+  getMySubscriptions,
+  cancelSubscription,
+  renewSubscription,
+  extendSubscription,
+  convertTrialToPaid,
+} from "../assets/services/api";
 import { useToast } from "../components/ToastProvider";
 import EmptyState from "../components/EmptyState";
 import Skeleton from "../components/Skeleton";
-import AnalyticsChartCard from "../components/AnalyticsChartCard";
 import StatusBadge from "../components/StatusBadge";
 
 interface Subscription {
   id: number;
   plan_id: number;
-  status: string;
+  plan_name: string | null;
+  billing_interval: string | null;
+  price: number | null;
+  status: "active" | "trial" | "pending" | "past_due" | "cancelled";
+  trial_ends_at: string | null;
   current_period_start: string;
   current_period_end: string;
   cancel_at_period_end: boolean;
 }
 
-const statusStyles: Record<string, { color: string; icon: ReactNode; label: string }> = {
-  active: { color: "text-green-600 bg-green-50", icon: <CheckCircle size={20} />, label: "Active" },
-  trial: { color: "text-blue-600 bg-blue-50", icon: <Clock size={20} />, label: "Trial" },
-  past_due: { color: "text-amber-600 bg-amber-50", icon: <Clock size={20} />, label: "Past Due" },
-  cancelled: { color: "text-red-600 bg-red-50", icon: <XCircle size={20} />, label: "Cancelled" },
-};
+function daysBetween(a: Date, b: Date) {
+  return Math.max(0, Math.ceil((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24)));
+}
 
 function UserDashboard() {
   const { notify } = useToast();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionId, setActionId] = useState<number | null>(null);
 
   function load() {
     setLoading(true);
@@ -50,172 +54,254 @@ function UserDashboard() {
     load();
   }, []);
 
-  const activeSub = subscriptions.find((s) => s.status === "active" || s.status === "trial" || s.status === "past_due");
+  const active = useMemo(() => subscriptions.filter((s) => s.status === "active"), [subscriptions]);
+  const trial = useMemo(() => subscriptions.filter((s) => s.status === "trial"), [subscriptions]);
+  const pending = useMemo(() => subscriptions.filter((s) => s.status === "pending"), [subscriptions]);
+  const pastDue = useMemo(() => subscriptions.filter((s) => s.status === "past_due"), [subscriptions]);
 
-  async function handleCancel(immediate: boolean) {
-    if (!activeSub) return;
-    setActionLoading(true);
+  const hasAnything = subscriptions.some((s) => s.status !== "cancelled");
+
+  async function withAction(id: number, fn: () => Promise<any>, successMsg: string) {
+    setActionId(id);
     try {
-      await cancelSubscription(activeSub.id, immediate);
-      notify({
-        title: "Subscription updated",
-        description: immediate ? "Cancelled immediately." : "Will cancel at period end.",
-        variant: "info",
-      });
+      await fn();
+      notify({ title: "Done", description: successMsg, variant: "success" });
       load();
     } catch (err: any) {
-      notify({
-        title: "Action failed",
-        description: err.message || "Could not cancel subscription.",
-        variant: "error",
-      });
+      notify({ title: "Action failed", description: err.message || "Something went wrong.", variant: "error" });
     } finally {
-      setActionLoading(false);
+      setActionId(null);
     }
   }
-
-  async function handleRenew() {
-    if (!activeSub) return;
-    setActionLoading(true);
-    try {
-      await renewSubscription(activeSub.id);
-      notify({
-        title: "Subscription renewed",
-        description: "Your plan is renewed for the next billing period.",
-        variant: "success",
-      });
-      load();
-    } catch (err: any) {
-      notify({
-        title: "Renewal failed",
-        description: err.message || "Could not renew subscription.",
-        variant: "error",
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  const chartData = useMemo(() => {
-    const baseValue = activeSub ? Math.max(activeSub.plan_id * 120 + 4200, 4200) : 4500;
-    return [
-      { label: "Week 1", value: baseValue * 0.8 },
-      { label: "Week 2", value: baseValue * 0.88 },
-      { label: "Week 3", value: baseValue * 0.96 },
-      { label: "Week 4", value: baseValue * 1.04 },
-    ];
-  }, [activeSub]);
 
   return (
-    <div className="space-y-8">
-      <div className="mb-6">
+    <div className="space-y-10">
+      <div className="mb-2">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Subscriber dashboard</p>
-        <h1 className="mt-3 text-4xl font-semibold text-slate-900 dark:text-white">Subscription health</h1>
+        <h1 className="mt-3 text-4xl font-semibold text-slate-900 dark:text-white">Your subscriptions</h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-400">
-          Track your plan, renewal cadence, and action items in a centered enterprise workspace.
+          Everything you're subscribed to, queued, trialing, or need to renew — in one place.
         </p>
       </div>
 
       {loading && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-60 rounded-[24px]" />
-          <Skeleton className="h-60 rounded-[24px]" />
+          <Skeleton className="h-48 rounded-[24px]" />
+          <Skeleton className="h-48 rounded-[24px]" />
         </div>
       )}
 
-      {!loading && !activeSub && (
+      {!loading && !hasAnything && (
         <EmptyState
           title="No active plan found"
-          description="Choose a plan to unlock billing automation, invoices, and revenue reporting."
+          description="Choose a plan to get started."
           primaryAction={{ label: "Explore plans", path: "/plans" }}
-          secondaryAction={{ label: "Visit invoices", path: "/invoices" }}
           icon={<CreditCard size={24} />}
         />
       )}
 
-      {!loading && activeSub && (
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <section className="panel rounded-[24px] p-8 shadow-sm">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Current plan</p>
-                <h2 className="mt-3 text-3xl font-semibold text-slate-900 dark:text-white">Plan #{activeSub.plan_id}</h2>
+      {!loading && hasAnything && (
+        <div className="space-y-10">
+          {active.length > 0 && (
+            <SectionBlock
+              icon={<CheckCircle size={18} />}
+              title="Active Plans"
+              accent="text-emerald-600"
+            >
+              <div className="grid gap-6 md:grid-cols-2">
+                {active.map((sub) => (
+                  <ActiveCard
+                    key={sub.id}
+                    sub={sub}
+                    busy={actionId === sub.id}
+                    onCancelImmediate={() =>
+                      withAction(sub.id, () => cancelSubscription(sub.id, true), `${sub.plan_name} cancelled immediately.`)
+                    }
+                    onCancelAtPeriodEnd={() =>
+                      withAction(sub.id, () => cancelSubscription(sub.id, false), `${sub.plan_name} will cancel at period end.`)
+                    }
+                    onExtend={() =>
+                      withAction(sub.id, () => extendSubscription(sub.id), `${sub.plan_name} extended by one more cycle.`)
+                    }
+                  />
+                ))}
               </div>
-              <StatusBadge variant={activeSub.status === "active" ? "success" : activeSub.status === "trial" ? "info" : activeSub.status === "past_due" ? "warning" : "danger"}>
-                {statusStyles[activeSub.status]?.label || activeSub.status}
-              </StatusBadge>
-            </div>
+            </SectionBlock>
+          )}
 
-            <div className="mt-8 grid gap-5 sm:grid-cols-2">
-              <div className="rounded-[24px] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Billing period start</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{new Date(activeSub.current_period_start).toLocaleDateString()}</p>
+          {trial.length > 0 && (
+            <SectionBlock icon={<Clock size={18} />} title="Trial Plans" accent="text-blue-600">
+              <div className="grid gap-6 md:grid-cols-2">
+                {trial.map((sub) => (
+                  <TrialCard
+                    key={sub.id}
+                    sub={sub}
+                    busy={actionId === sub.id}
+                    onContinueToPay={() =>
+                      withAction(sub.id, () => convertTrialToPaid(sub.id), `${sub.plan_name} is now a paid plan.`)
+                    }
+                  />
+                ))}
               </div>
-              <div className="rounded-[24px] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-slate-700/70 dark:bg-slate-950/50">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Next renewal</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{new Date(activeSub.current_period_end).toLocaleDateString()}</p>
+            </SectionBlock>
+          )}
+
+          {pending.length > 0 && (
+            <SectionBlock icon={<Hourglass size={18} />} title="Pending Plans" accent="text-indigo-600">
+              <div className="grid gap-6 md:grid-cols-2">
+                {pending.map((sub) => (
+                  <PendingCard key={sub.id} sub={sub} />
+                ))}
               </div>
-            </div>
+            </SectionBlock>
+          )}
 
-            {activeSub.cancel_at_period_end && (
-              <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
-                This subscription is scheduled to cancel at the end of the current period.
+          {pastDue.length > 0 && (
+            <SectionBlock icon={<XCircle size={18} />} title="Past Due Plans" accent="text-rose-600">
+              <div className="grid gap-6 md:grid-cols-2">
+                {pastDue.map((sub) => (
+                  <PastDueCard
+                    key={sub.id}
+                    sub={sub}
+                    busy={actionId === sub.id}
+                    onRenew={() => withAction(sub.id, () => renewSubscription(sub.id), `${sub.plan_name} renewed.`)}
+                  />
+                ))}
               </div>
-            )}
+            </SectionBlock>
+          )}
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/plans" className="btn-ghost">
-                Change plan
-              </Link>
-              {activeSub.status !== "cancelled" && !activeSub.cancel_at_period_end && (
-                <button
-                  onClick={() => handleCancel(false)}
-                  disabled={actionLoading}
-                  className="btn-ghost"
-                >
-                  Cancel at period end
-                </button>
-              )}
-              {activeSub.status !== "cancelled" && (
-                <button
-                  onClick={() => handleCancel(true)}
-                  disabled={actionLoading}
-                  className="btn-ghost"
-                >
-                  Cancel immediately
-                </button>
-              )}
-              {(activeSub.status === "past_due" || activeSub.cancel_at_period_end) && (
-                <button
-                  onClick={handleRenew}
-                  disabled={actionLoading}
-                  className="btn-primary"
-                >
-                  Renew now
-                </button>
-              )}
-            </div>
-          </section>
-
-          <AnalyticsChartCard title="Billing forecast" description="Expected revenue movement for your current plan.">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="userRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" />
-                <XAxis dataKey="label" stroke="#64748b" />
-                <YAxis stroke="#64748b" tickFormatter={(value) => `$${Math.round(value / 1000)}k`} />
-                <Tooltip contentStyle={{ borderRadius: 18, border: "1px solid rgba(148, 163, 184, 0.16)", background: "rgba(255,255,255,0.96)" }} formatter={(value: any) => `$${Number(value).toLocaleString()}`} />
-                <Area type="monotone" dataKey="value" stroke="#2563eb" fill="url(#userRevenue)" strokeWidth={3} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </AnalyticsChartCard>
+          <div className="flex justify-end">
+            <Link to="/plans" className="btn-ghost inline-flex items-center gap-2">
+              <ArrowUpCircle size={16} />
+              Explore more plans
+            </Link>
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SectionBlock({ icon, title, accent, children }: { icon: React.ReactNode; title: string; accent: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className={`mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] ${accent}`}>
+        {icon}
+        {title}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function PlanHeader({ sub, badgeVariant, badgeLabel }: { sub: Subscription; badgeVariant: "success" | "warning" | "danger" | "info" | "neutral"; badgeLabel: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+          {sub.billing_interval || "—"}
+        </p>
+        <h3 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{sub.plan_name || `Plan #${sub.plan_id}`}</h3>
+      </div>
+      <StatusBadge variant={badgeVariant}>{badgeLabel}</StatusBadge>
+    </div>
+  );
+}
+
+function ActiveCard({
+  sub,
+  busy,
+  onCancelImmediate,
+  onCancelAtPeriodEnd,
+  onExtend,
+}: {
+  sub: Subscription;
+  busy: boolean;
+  onCancelImmediate: () => void;
+  onCancelAtPeriodEnd: () => void;
+  onExtend: () => void;
+}) {
+  return (
+    <div className="panel rounded-[24px] p-6 shadow-sm">
+      <PlanHeader sub={sub} badgeVariant="success" badgeLabel="Active" />
+
+      <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-3 dark:border-slate-700/70 dark:bg-slate-950/50">
+          <p className="text-xs text-slate-500 dark:text-slate-400">Started</p>
+          <p className="mt-1 font-semibold text-slate-900 dark:text-white">{new Date(sub.current_period_start).toLocaleDateString()}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200/70 bg-slate-50/80 p-3 dark:border-slate-700/70 dark:bg-slate-950/50">
+          <p className="text-xs text-slate-500 dark:text-slate-400">Renews</p>
+          <p className="mt-1 font-semibold text-slate-900 dark:text-white">{new Date(sub.current_period_end).toLocaleDateString()}</p>
+        </div>
+      </div>
+
+      {sub.cancel_at_period_end && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+          Scheduled to cancel at the end of this period.
+        </div>
+      )}
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button onClick={onExtend} disabled={busy} className="btn-primary text-sm px-4 py-2">
+          Extend
+        </button>
+        {!sub.cancel_at_period_end && (
+          <button onClick={onCancelAtPeriodEnd} disabled={busy} className="btn-ghost text-sm px-4 py-2">
+            Cancel at period end
+          </button>
+        )}
+        <button onClick={onCancelImmediate} disabled={busy} className="btn-ghost text-sm px-4 py-2 text-rose-600">
+          Cancel immediately
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TrialCard({ sub, busy, onContinueToPay }: { sub: Subscription; busy: boolean; onContinueToPay: () => void }) {
+  const daysLeft = sub.trial_ends_at ? daysBetween(new Date(sub.trial_ends_at), new Date()) : 0;
+
+  return (
+    <div className="panel rounded-[24px] p-6 shadow-sm">
+      <PlanHeader sub={sub} badgeVariant="info" badgeLabel="Trial" />
+
+      <div className="mt-5 rounded-2xl border border-blue-200/70 bg-blue-50/70 p-4 dark:border-blue-500/20 dark:bg-blue-500/10">
+        <p className="text-3xl font-semibold text-blue-700 dark:text-blue-300">{daysLeft}</p>
+        <p className="text-xs text-blue-700/80 dark:text-blue-300/80">
+          day{daysLeft === 1 ? "" : "s"} left — trial ends {sub.trial_ends_at ? new Date(sub.trial_ends_at).toLocaleDateString() : "soon"}
+        </p>
+      </div>
+
+      <button onClick={onContinueToPay} disabled={busy} className="btn-primary mt-5 w-full text-sm">
+        Continue to Pay
+      </button>
+    </div>
+  );
+}
+
+function PendingCard({ sub }: { sub: Subscription }) {
+  return (
+    <div className="panel rounded-[24px] p-6 shadow-sm opacity-90">
+      <PlanHeader sub={sub} badgeVariant="neutral" badgeLabel="Pending" />
+      <div className="mt-5 rounded-2xl border border-indigo-200/70 bg-indigo-50/70 p-4 text-sm text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300">
+        Starts automatically on {new Date(sub.current_period_start).toLocaleDateString()}, once your current plan on this platform ends.
+      </div>
+    </div>
+  );
+}
+
+function PastDueCard({ sub, busy, onRenew }: { sub: Subscription; busy: boolean; onRenew: () => void }) {
+  return (
+    <div className="panel rounded-[24px] p-6 shadow-sm border-rose-200/70 dark:border-rose-500/20">
+      <PlanHeader sub={sub} badgeVariant="danger" badgeLabel="Past Due" />
+      <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
+        This plan was due on {new Date(sub.current_period_end).toLocaleDateString()} and hasn't been renewed.
+      </div>
+      <button onClick={onRenew} disabled={busy} className="btn-primary mt-5 w-full text-sm">
+        Renew now
+      </button>
     </div>
   );
 }

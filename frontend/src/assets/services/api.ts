@@ -70,21 +70,6 @@ export async function getPlans() {
 }
 
 // ---- Subscriptions ----
-export async function subscribeToPlan(planId: number) {
-  const response = await fetch(`${API_URL}/subscriptions/`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ plan_id: planId }),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.detail || "Subscription failed");
-  }
-
-  return result;
-}
 
 export async function getMySubscriptions() {
   const response = await fetch(`${API_URL}/subscriptions/me`, {
@@ -264,4 +249,37 @@ export async function setPassword(token: string, newPassword: string) {
   if (!response.ok) throw new Error(result.detail || "Could not set password");
   return result; // { access_token, token_type }
 }
+export async function extendSubscription(id: number) {
+  const response = await fetch(`${API_URL}/subscriptions/${id}/extend`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to extend subscription");
+  return result;
+}
 
+export async function convertTrialToPaid(id: number) {
+  const response = await fetch(`${API_URL}/subscriptions/${id}/convert-trial`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || "Failed to convert trial");
+  return result;
+}
+export async function subscribeToPlan(planId: number, options?: { skip_trial?: boolean }) {
+  const response = await fetch(`${API_URL}/subscriptions/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ plan_id: planId, skip_trial: options?.skip_trial ?? false }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.detail || "Subscription failed");
+  }
+
+  return result;
+}

@@ -25,3 +25,6 @@ class SubscriptionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+class SubscriptionCreate(BaseModel):
+    plan_id: int
+    skip_trial: bool = False

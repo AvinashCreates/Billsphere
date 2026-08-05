@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Crown, Sparkles, CheckCircle2, Pencil, Trash2, Power, Download, Plus } from "lucide-react";
 import * as XLSX from "xlsx";
-import { getPlans, getAdminPlans, subscribeToPlan, createPlan, updatePlan, setPlanStatus, deletePlan } from "../assets/services/api";
+import { getPlans, getAdminPlans, createPlan, updatePlan, setPlanStatus, deletePlan } from "../assets/services/api";
 import { useAuth } from "../contexts/AuthContext";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/common/Card";
@@ -11,6 +11,7 @@ import { useToast } from "../components/ToastProvider";
 import AppShell from "../components/layout/AppShell";
 import DataTable from "../components/table/DataTable";
 import StatusBadge from "../components/StatusBadge";
+import ChoosePlanModal from "../components/ChoosePlanModal";
 
 interface Plan {
   id: number;
@@ -35,7 +36,7 @@ function Plans() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
-  const [subscribingId, setSubscribingId] = useState<number | null>(null);
+  const [modalPlan, setModalPlan] = useState<Plan | null>(null);
 
   // ---- Admin-only state ----
   const [adminPlans, setAdminPlans] = useState<Plan[]>([]);
@@ -84,21 +85,6 @@ function Plans() {
       notify({ title: "Plan load failed", description: err.message, variant: "error" });
     } finally {
       setAdminLoading(false);
-    }
-  }
-
-  async function choosePlan(plan: Plan) {
-    setError("");
-    setSubscribingId(plan.id);
-    try {
-      await subscribeToPlan(plan.id);
-      setSelectedPlan(plan.name);
-      notify({ title: "Plan activated", description: `You are now subscribed to the ${plan.name} plan.`, variant: "success" });
-    } catch (err: any) {
-      setError(err.message || "Could not subscribe to this plan");
-      notify({ title: "Subscription failed", description: err.message, variant: "error" });
-    } finally {
-      setSubscribingId(null);
     }
   }
 
@@ -370,8 +356,8 @@ function Plans() {
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">per {plan.billing_interval === "yearly" ? "year" : "month"}</p>
                 </div>
 
-                <button onClick={() => choosePlan(plan)} disabled={subscribingId === plan.id} className="btn-primary mt-8 w-full">
-                  {subscribingId === plan.id ? "Subscribing..." : "Choose Plan"}
+                <button onClick={() => setModalPlan(plan)} className="btn-primary mt-8 w-full">
+                  Choose Plan
                 </button>
               </Card>
             ))}
@@ -382,6 +368,17 @@ function Plans() {
           <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300">
             Current selected plan: <strong>{selectedPlan}</strong>
           </div>
+        )}
+
+        {modalPlan && (
+          <ChoosePlanModal
+            plan={modalPlan}
+            onClose={() => setModalPlan(null)}
+            onSuccess={(planName) => {
+              setSelectedPlan(planName);
+              notify({ title: "Plan updated", description: `${planName} is now set up on your account.`, variant: "success" });
+            }}
+          />
         )}
       </div>
     </AppShell>

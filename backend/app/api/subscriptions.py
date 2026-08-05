@@ -6,7 +6,6 @@ from app.database.database import SessionLocal
 from app.models.subscription import Subscription
 from app.models.customer import Customer
 from app.models.plan import Plan
-from app.models.audit_log import AuditLog
 from app.schemas.subscription import (
     SubscriptionCreate,
     SubscriptionUpdate,
@@ -15,7 +14,13 @@ from app.schemas.subscription import (
 )
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
-from app.workers.email_tasks import send_subscription_confirmation
+from app.services.subscription_logic import period_length_days, log_event, promote_pending_subscription
+from app.workers.email_tasks import (
+    send_subscription_confirmation,
+    send_trial_activated_email,
+    send_cancellation_email,
+    send_reactivation_email,
+)
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
@@ -29,7 +34,6 @@ def get_db():
 
 
 def get_or_create_customer(db: Session, user: User) -> Customer:
-    """Find the Customer record matching this logged-in user, or create one."""
     customer = db.query(Customer).filter(Customer.email == user.email).first()
     if customer:
         return customer
@@ -45,20 +49,7 @@ def get_or_create_customer(db: Session, user: User) -> Customer:
     return new_customer
 
 
-def log_event(db: Session, entity_id: int, event: str, actor: str):
-    """Write a row to audit_logs for a subscription state change."""
-    entry = AuditLog(
-        entity_type="subscription",
-        entity_id=entity_id,
-        event=event,
-        actor=actor,
-    )
-    db.add(entry)
-    db.commit()
-
-
 def get_owned_subscription(db: Session, sub_id: int, current_user: User) -> Subscription:
-    """Fetch a subscription, enforcing that only its owner or an admin can access it."""
     sub = db.query(Subscription).filter(Subscription.id == sub_id).first()
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
@@ -73,12 +64,8 @@ def get_owned_subscription(db: Session, sub_id: int, current_user: User) -> Subs
     return sub
 
 
-def period_length_days(plan: Plan) -> int:
-    return 365 if plan.billing_interval == "yearly" else 30
-
-
 # ---------------------------------------------------------------------
-# CREATE
+# CREATE — same-platform queuing, plus trial-vs-pay branching
 # ---------------------------------------------------------------------
 @router.post("/", response_model=SubscriptionResponse)
 def subscribe(
@@ -89,15 +76,60 @@ def subscribe(
     plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found")
+    if plan.status != "active":
+        raise HTTPException(status_code=400, detail="This plan is not currently available")
 
     customer = get_or_create_customer(db, current_user)
-
     now = datetime.now(timezone.utc)
 
-    if plan.trial_period_days and plan.trial_period_days > 0:
-        # Start in trial: the trial period counts as the first "current period"
+    running_same_platform = (
+        db.query(Subscription)
+        .join(Plan, Plan.id == Subscription.plan_id)
+        .filter(
+            Subscription.customer_id == customer.id,
+            Subscription.status.in_(["active", "trial"]),
+            Plan.name == plan.name,
+        )
+        .first()
+    )
+
+    already_pending = (
+        db.query(Subscription)
+        .join(Plan, Plan.id == Subscription.plan_id)
+        .filter(
+            Subscription.customer_id == customer.id,
+            Subscription.status == "pending",
+            Plan.name == plan.name,
+        )
+        .first()
+    )
+    if already_pending:
+        raise HTTPException(status_code=400, detail=f"You already have a pending {plan.name} plan queued")
+
+    if running_same_platform:
+        # Queue it — auto-activates once the currently running plan ends. No email here;
+        # the customer already gets one when it actually goes live.
+        new_sub = Subscription(
+            customer_id=customer.id,
+            plan_id=plan.id,
+            status="pending",
+            trial_ends_at=None,
+            current_period_start=running_same_platform.current_period_end,
+            current_period_end=running_same_platform.current_period_end + timedelta(days=period_length_days(plan)),
+            cancel_at_period_end=False,
+        )
+        db.add(new_sub)
+        db.commit()
+        db.refresh(new_sub)
+        log_event(db, new_sub.id, "subscription.queued_pending", current_user.email)
+        return new_sub
+
+    # No conflict — decide trial vs paid based on the plan and the customer's choice
+    effective_trial_days = 0 if sub.skip_trial else plan.trial_period_days
+
+    if effective_trial_days and effective_trial_days > 0:
         status_value = "trial"
-        trial_ends_at = now + timedelta(days=plan.trial_period_days)
+        trial_ends_at = now + timedelta(days=effective_trial_days)
         period_end = trial_ends_at
     else:
         status_value = "active"
@@ -119,30 +151,26 @@ def subscribe(
 
     log_event(db, new_sub.id, f"subscription.created:{status_value}", current_user.email)
 
-    # Trigger Celery subscription confirmation email task
-    try:
-        send_subscription_confirmation.delay(
-            customer.email,
-            customer.name,
-            plan.name,
-            plan.billing_interval,
-            period_end.isoformat(),
+    if status_value == "trial":
+        send_trial_activated_email.delay(
+            customer.email, customer.name, plan.name, effective_trial_days, trial_ends_at.isoformat(),
         )
-    except Exception as e:
-        print(f"Failed to queue subscription confirmation email task: {e}")
+    else:
+        send_subscription_confirmation.delay(
+            customer.email, customer.name, plan.name, plan.billing_interval, period_end.isoformat(),
+        )
 
     return new_sub
 
 
 # ---------------------------------------------------------------------
-# LIST MINE
+# LIST ALL (admin)
 # ---------------------------------------------------------------------
 @router.get("/")
 def list_all_subscriptions(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
-    """Admin view: every subscription joined with customer + plan info."""
     subs = db.query(Subscription).all()
     result = []
 
@@ -152,7 +180,7 @@ def list_all_subscriptions(
 
         result.append({
             "id": sub.id,
-            "status": sub.status,  # trial/active/past_due/cancelled
+            "status": sub.status,
             "trial_ends_at": sub.trial_ends_at,
             "current_period_start": sub.current_period_start,
             "current_period_end": sub.current_period_end,
@@ -168,7 +196,10 @@ def list_all_subscriptions(
     return result
 
 
-@router.get("/me", response_model=list[SubscriptionResponse])
+# ---------------------------------------------------------------------
+# LIST MINE
+# ---------------------------------------------------------------------
+@router.get("/me")
 def my_subscriptions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -176,7 +207,24 @@ def my_subscriptions(
     customer = db.query(Customer).filter(Customer.email == current_user.email).first()
     if not customer:
         return []
-    return db.query(Subscription).filter(Subscription.customer_id == customer.id).all()
+
+    subs = db.query(Subscription).filter(Subscription.customer_id == customer.id).all()
+    result = []
+    for sub in subs:
+        plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
+        result.append({
+            "id": sub.id,
+            "plan_id": sub.plan_id,
+            "plan_name": plan.name if plan else None,
+            "billing_interval": plan.billing_interval if plan else None,
+            "price": float(plan.price) if plan else None,
+            "status": sub.status,
+            "trial_ends_at": sub.trial_ends_at,
+            "current_period_start": sub.current_period_start,
+            "current_period_end": sub.current_period_end,
+            "cancel_at_period_end": sub.cancel_at_period_end,
+        })
+    return result
 
 
 # ---------------------------------------------------------------------
@@ -193,7 +241,7 @@ def subscription_stats(
         .all()
     )
     stats = {status: count for status, count in rows}
-    for s in ["trial", "active", "past_due", "cancelled"]:
+    for s in ["trial", "active", "past_due", "cancelled", "pending"]:
         stats.setdefault(s, 0)
     return stats
 
@@ -241,7 +289,7 @@ def update_subscription(
 
 
 # ---------------------------------------------------------------------
-# CANCEL (immediate or end-of-cycle)
+# CANCEL — immediate promotes a pending plan; both branches send a cancellation email
 # ---------------------------------------------------------------------
 @router.post("/{subscription_id}/cancel", response_model=SubscriptionResponse)
 def cancel_subscription(
@@ -255,22 +303,100 @@ def cancel_subscription(
     if sub.status == "cancelled":
         raise HTTPException(status_code=400, detail="Subscription is already cancelled")
 
+    plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
+    customer = db.query(Customer).filter(Customer.id == sub.customer_id).first()
+
     if cancel.immediate:
         sub.status = "cancelled"
         sub.cancel_at_period_end = False
         sub.current_period_end = datetime.now(timezone.utc)
         log_event(db, sub.id, "subscription.cancelled_immediately", current_user.email)
+        db.commit()
+        db.refresh(sub)
+
+        if plan and customer:
+            send_cancellation_email.delay(
+                customer.email, customer.name, plan.name, True, sub.current_period_end.isoformat(),
+            )
+            promote_pending_subscription(db, sub.customer_id, plan.name, current_user.email)
     else:
         sub.cancel_at_period_end = True
         log_event(db, sub.id, "subscription.cancel_scheduled_at_period_end", current_user.email)
+        db.commit()
+        db.refresh(sub)
 
-    db.commit()
-    db.refresh(sub)
+        if plan and customer:
+            send_cancellation_email.delay(
+                customer.email, customer.name, plan.name, False, sub.current_period_end.isoformat(),
+            )
+
     return sub
 
 
 # ---------------------------------------------------------------------
-# RENEW (start a fresh billing period)
+# EXTEND
+# ---------------------------------------------------------------------
+@router.post("/{subscription_id}/extend", response_model=SubscriptionResponse)
+def extend_subscription(
+    subscription_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    sub = get_owned_subscription(db, subscription_id, current_user)
+
+    if sub.status not in ("active", "trial"):
+        raise HTTPException(status_code=400, detail="Only active or trial subscriptions can be extended")
+
+    plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    sub.current_period_end = sub.current_period_end + timedelta(days=period_length_days(plan))
+    db.commit()
+    db.refresh(sub)
+
+    log_event(db, sub.id, "subscription.extended", current_user.email)
+    return sub
+
+
+# ---------------------------------------------------------------------
+# CONVERT TRIAL → PAID
+# ---------------------------------------------------------------------
+@router.post("/{subscription_id}/convert-trial", response_model=SubscriptionResponse)
+def convert_trial_to_paid(
+    subscription_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    sub = get_owned_subscription(db, subscription_id, current_user)
+    if sub.status != "trial":
+        raise HTTPException(status_code=400, detail="Only trial subscriptions can be converted")
+
+    plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    now = datetime.now(timezone.utc)
+    sub.status = "active"
+    sub.trial_ends_at = None
+    sub.current_period_start = now
+    sub.current_period_end = now + timedelta(days=period_length_days(plan))
+    db.commit()
+    db.refresh(sub)
+
+    log_event(db, sub.id, "subscription.trial_converted_to_paid", current_user.email)
+
+    customer = db.query(Customer).filter(Customer.id == sub.customer_id).first()
+    if customer:
+        send_subscription_confirmation.delay(
+            customer.email, customer.name, plan.name, plan.billing_interval, sub.current_period_end.isoformat(),
+        )
+
+    return sub
+
+
+# ---------------------------------------------------------------------
+# RENEW — past_due recovery; sends the reactivation email
 # ---------------------------------------------------------------------
 @router.post("/{subscription_id}/renew", response_model=SubscriptionResponse)
 def renew_subscription(
@@ -297,11 +423,16 @@ def renew_subscription(
     db.refresh(sub)
 
     log_event(db, sub.id, "subscription.renewed", current_user.email)
+
+    customer = db.query(Customer).filter(Customer.id == sub.customer_id).first()
+    if customer:
+        send_reactivation_email.delay(customer.email, customer.name, plan.name, sub.current_period_end.isoformat())
+
     return sub
 
 
 # ---------------------------------------------------------------------
-# EXPIRE (period ended with no successful renewal)
+# EXPIRE (admin manual trigger)
 # ---------------------------------------------------------------------
 @router.post("/{subscription_id}/expire", response_model=SubscriptionResponse)
 def expire_subscription(

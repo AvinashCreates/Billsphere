@@ -5,31 +5,12 @@ from app.models.subscription import Subscription
 from app.models.audit_log import AuditLog
 from app.models.customer import Customer
 from app.models.plan import Plan
-
-
-def log_event(db, entity_id: int, event: str, actor: str = "system:celery"):
-    entry = AuditLog(
-        entity_type="subscription",
-        entity_id=entity_id,
-        event=event,
-        actor=actor,
-    )
-    db.add(entry)
-    db.commit()
+from app.services.subscription_logic import log_event, promote_pending_subscription
+from app.workers.email_tasks import send_past_due_email
 
 
 @celery_app.task(name="app.workers.tasks.process_due_subscriptions")
 def process_due_subscriptions():
-    """
-    Runs on a schedule (Celery beat). Finds subscriptions whose current
-    billing period has ended and moves them to the next state:
-      - if cancel_at_period_end was set -> cancelled
-      - otherwise -> past_due (awaiting renewal/payment)
-
-    This is the automated equivalent of manually calling /expire on each
-    subscription — it's what actually makes the state machine "live"
-    instead of requiring an admin to trigger it by hand.
-    """
     db = SessionLocal()
     now = datetime.now(timezone.utc)
     processed = []
@@ -45,12 +26,34 @@ def process_due_subscriptions():
         )
 
         for sub in due_subs:
-            if sub.cancel_at_period_end:
+            plan = db.query(Plan).filter(Plan.id == sub.plan_id).first()
+            customer = db.query(Customer).filter(Customer.id == sub.customer_id).first()
+
+            pending_exists = False
+            if plan:
+                pending_exists = (
+                    db.query(Subscription)
+                    .join(Plan, Plan.id == Subscription.plan_id)
+                    .filter(
+                        Subscription.customer_id == sub.customer_id,
+                        Subscription.status == "pending",
+                        Plan.name == plan.name,
+                    )
+                    .first()
+                ) is not None
+
+            if pending_exists:
                 sub.status = "cancelled"
-                log_event(db, sub.id, "subscription.auto_cancelled_at_period_end")
+                log_event(db, sub.id, "subscription.auto_cancelled_pending_takeover", "system:celery")
+                promote_pending_subscription(db, sub.customer_id, plan.name, actor="system:celery")
+            elif sub.cancel_at_period_end:
+                sub.status = "cancelled"
+                log_event(db, sub.id, "subscription.auto_cancelled_at_period_end", "system:celery")
             else:
                 sub.status = "past_due"
-                log_event(db, sub.id, "subscription.auto_marked_past_due")
+                log_event(db, sub.id, "subscription.auto_marked_past_due", "system:celery")
+                if plan and customer:
+                    send_past_due_email.delay(customer.email, customer.name, plan.name, sub.current_period_end.isoformat())
 
             processed.append(sub.id)
 
