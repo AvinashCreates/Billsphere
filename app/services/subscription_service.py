@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
+from datetime import datetime, UTC, timedelta
 
+from app.services.invoice_service import generate_invoice
 from app.models.subscription import Subscription
 from app.models.plan import Plan
 
@@ -66,16 +68,35 @@ def subscribe(
     # 4. Create subscription
     # ------------------------------------------------------
 
+    period_start = datetime.now(UTC)
+
+    period_end = period_start + timedelta(
+        days=selected_plan.duration
+    )
+
     subscription = Subscription(
         user_id=user_id,
         plan_id=plan.plan_id,
         status="active",
+        current_period_start=period_start,
+        current_period_end=period_end,
     )
 
-    return create_subscription(
+    subscription = create_subscription(
         db,
         subscription,
     )
+
+    generate_invoice(
+         db=db,
+         subscription_id=subscription.id,
+         user_id=subscription.user_id,
+         amount=selected_plan.price,
+         billing_period_start=subscription.current_period_start,
+         billing_period_end=subscription.current_period_end,
+    )
+
+    return subscription
 
 
 # ==========================================================
