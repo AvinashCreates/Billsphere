@@ -30,3 +30,13 @@ class Subscription(Base):
         DateTime,
         default=lambda: datetime.now(UTC)
     )
+
+    current_period_start = Column(
+        DateTime,
+        nullable=False
+    )
+
+    current_period_end = Column(
+        DateTime,
+        nullable=False
+    )
