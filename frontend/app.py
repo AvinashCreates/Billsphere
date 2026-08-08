@@ -8,21 +8,17 @@ if "token" in st.session_state:
     if user["role"] == "admin":
         st.switch_page("pages/AdminDashboard.py")
     else:
-        st.switch_page("pages/UserDashboard.py")
+        st.switch_page("pages/CustomerDashboard.py")
 
 # ---------------- Page Config ----------------
-st.set_page_config(
-    page_title="Billing Platform",
-    page_icon="💳",
-    layout="centered"
-)
-
 st.set_page_config(
     page_title="Billing Platform",
     page_icon="💳",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
+
+
 
 # Hide Streamlit's default sidebar only on this page
 st.markdown("""
@@ -67,6 +63,7 @@ st.markdown("""
     text-align:center;
     color:white;
     margin-bottom:25px;
+    
 }
 
 /* Feature Cards */
@@ -99,10 +96,6 @@ st.markdown("""
 
 <h4>Simple. Secure. Smart Billing.</h4>
 
-<p>
-Manage customers, subscriptions, plans and invoices
-from one powerful dashboard.
-</p>
 
 </div>
 """, unsafe_allow_html=True)

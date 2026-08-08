@@ -1,7 +1,11 @@
 import streamlit as st
 from auth import logout
+from styles import load_css
+
+load_css()
 
 # ---------------- Authentication ----------------
+
 if "token" not in st.session_state:
     st.switch_page("pages/Login.py")
 
@@ -14,56 +18,50 @@ if user["role"] != "admin":
     st.error("Access Denied")
     st.stop()
 
+
 # ---------------- Page Config ----------------
+
 st.set_page_config(
     page_title="Admin Dashboard",
     page_icon="💳",
     layout="wide"
 )
 
+
 # ---------------- Custom CSS ----------------
-st.markdown("""
-<style>
 
-[data-testid="stSidebar"]{
-    background:#0F172A;
-}
+# ---------------- Custom CSS ----------------
 
-[data-testid="stSidebar"] *{
-    color:white;
-}
+st.markdown(
+    """
+    <style>
 
-.block-container{
-    padding-top:2rem;
-    padding-bottom:2rem;
-}
+    .hero-banner {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        padding: 35px 40px;
+        border-radius: 18px;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
+    }
 
-div[data-testid="metric-container"]{
-    background:white;
-    border:1px solid #E5E7EB;
-    border-radius:15px;
-    padding:18px;
-    box-shadow:0px 3px 10px rgba(0,0,0,.08);
-}
+    .hero-content h1 {
+        color: white;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
 
-.banner{
-    background:linear-gradient(90deg,#2563EB,#1D4ED8);
-    padding:25px;
-    border-radius:18px;
-    color:white;
-    margin-bottom:20px;
-}
+    .hero-content p {
+        color: #e0ecff;
+        font-size: 17px;
+        margin: 0;
+    }
 
-.section{
-    background:#F8FAFC;
-    padding:18px;
-    border-radius:15px;
-    border:1px solid #E5E7EB;
-    height:100%;
-}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-</style>
-""", unsafe_allow_html=True)
 
 # ---------------- Sidebar ----------------
 
@@ -89,6 +87,10 @@ with st.sidebar:
     if st.button("📦 Plans", use_container_width=True):
         st.switch_page("pages/Plans.py")
 
+    # Invoice module added from invoices branch
+    if st.button("🧾 Invoices", use_container_width=True):
+        st.switch_page("pages/Invoices.py")
+
     if st.button("🔄 Subscriptions", use_container_width=True):
         st.info("Subscriptions module coming soon.")
 
@@ -101,46 +103,51 @@ with st.sidebar:
         logout()
         st.switch_page("app.py")
 
+
 # ---------------- Hero Banner ----------------
 
-st.markdown(f"""
-<div class="banner">
+# ---------------- Hero Banner ----------------
 
-<h2>👋 Welcome back, {user['username']}</h2>
-
-Manage customers, plans, subscriptions and monitor your billing platform from one place.
-
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    f"""
+    <div class="hero-banner">
+        <div class="hero-content">
+            <h1>Welcome, {user['username']}! 👋</h1>
+            <p>
+                Manage customers, plans, invoices, subscriptions
+                and monitor your billing platform from one place.
+            </p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # ---------------- Overview ----------------
 
 st.subheader("📊 Platform Overview")
 
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.metric("👤 Users", "1")
-
-with c2:
     st.metric("👥 Customers", "0")
 
-with c3:
+with c2:
     st.metric("📦 Plans", "0")
 
-with c4:
+with c3:
     st.metric("💰 Revenue", "₹0")
 
 st.divider()
+
 
 # ---------------- Quick Actions ----------------
 
 st.subheader("⚡ Quick Actions")
 
-q1, q2, q3 = st.columns(3)
+q1, q2, q3, q4 = st.columns(4)
 
 with q1:
-
     if st.button(
         "👥 Manage Customers",
         use_container_width=True
@@ -148,7 +155,6 @@ with q1:
         st.switch_page("pages/Customers.py")
 
 with q2:
-
     if st.button(
         "📦 Manage Plans",
         use_container_width=True
@@ -156,62 +162,20 @@ with q2:
         st.switch_page("pages/Plans.py")
 
 with q3:
+    if st.button(
+        "🧾 Manage Invoices",
+        use_container_width=True
+    ):
+        st.switch_page("pages/Invoices.py")
 
+with q4:
     if st.button(
         "🔄 Manage Subscriptions",
         use_container_width=True
     ):
         st.info("Subscriptions module coming soon.")
 
-st.divider()
-
-# ---------------- Bottom Section ----------------
-
-left, right = st.columns([2,1])
-
-# ---------- Recent Activity ----------
-
-with left:
-
-    st.subheader("📈 Recent Activity")
-
-    st.info("🆕 No recent customer registrations")
-
-    st.info("📦 No plans created yet")
-
-    st.info("🧾 Invoice module coming soon")
-
-    st.info("💳 Payment module coming soon")
-
-# ---------- System Status ----------
-
-with right:
-
-    st.subheader("⚙ Platform Status")
-
-    st.success("✅ API Server Running")
-
-    st.success("✅ Authentication Enabled")
-
-    st.success("✅ Database Connected")
-
-    st.warning("⏳ Subscription Module Pending")
-
-    st.warning("⏳ Invoice Module Pending")
 
 st.divider()
 
-# ---------------- Future Modules ----------------
 
-st.subheader("🚀 Upcoming Modules")
-
-m1, m2, m3 = st.columns(3)
-
-with m1:
-    st.info("🧾 Invoice Management")
-
-with m2:
-    st.info("💳 Payment Processing")
-
-with m3:
-    st.info("📊 Reports & Analytics")
