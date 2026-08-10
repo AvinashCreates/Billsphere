@@ -1,11 +1,11 @@
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.dependencies.auth import require_admin
+from app.dependencies.auth import get_current_user, require_admin
 from app.models.user import User
 
 from app.schemas.invoice import InvoiceDetail, PaginatedInvoiceResponse
@@ -21,6 +21,67 @@ router = APIRouter(
     prefix="/invoices",
     tags=["Invoices (Admin)"],
 )
+
+
+# ---------------------------------------------------------------------------
+# GET /invoices/my
+# Customer: retrieve a paginated list of the current user's own invoices.
+# Must be declared before "/{invoice_id}" routes so "my" isn't parsed as an id.
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/my",
+    response_model=PaginatedInvoiceResponse,
+    summary="List my invoices",
+    description="Customer-only. Retrieve a paginated list of the logged-in user's own invoices.",
+)
+def list_my_invoices(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    status_filter: str | None = Query(default=None, alias="status"),
+    payment_status: str | None = Query(default=None),
+    sort_by: str | None = Query(default="created_at"),
+    sort_order: str | None = Query(default="desc"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return get_invoices(
+        db=db,
+        page=page,
+        page_size=page_size,
+        status=status_filter,
+        payment_status=payment_status,
+        user_id=current_user.id,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /invoices/my/{invoice_id}
+# Customer: retrieve one of their own invoices in full detail.
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/my/{invoice_id}",
+    response_model=InvoiceDetail,
+    summary="Get my invoice detail",
+    description="Customer-only. Retrieve full detail of one of the logged-in user's own invoices.",
+)
+def get_my_invoice(
+    invoice_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    detail = get_invoice_detail(db=db, invoice_id=invoice_id)
+
+    if not detail.customer or detail.customer.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found.",
+        )
+
+    return detail
 
 
 # ---------------------------------------------------------------------------

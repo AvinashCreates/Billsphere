@@ -66,20 +66,39 @@ with st.sidebar:
 
     st.divider()
 
-    if st.button("🏠 Dashboard", use_container_width=True):
-        st.switch_page("pages/AdminDashboard.py")
+    if user.get("role") == "admin":
 
-    if st.button("👥 Customers", use_container_width=True):
-        st.switch_page("pages/Customers.py")
+        if st.button("🏠 Dashboard", use_container_width=True):
+            st.switch_page("pages/AdminDashboard.py")
 
-    if st.button("📦 Plans", use_container_width=True):
-        st.rerun()
+        if st.button("👥 Customers", use_container_width=True):
+            st.switch_page("pages/Customers.py")
 
-    if st.button("🧾 Invoices", use_container_width=True):
-        st.switch_page("pages/Invoice.py")
+        if st.button("📦 Plans", use_container_width=True):
+            st.rerun()
 
-    if st.button("👤 Profile", use_container_width=True):
-        st.switch_page("pages/Profile.py")
+        if st.button("🧾 Invoices", use_container_width=True):
+            st.switch_page("pages/Invoices.py")
+
+        if st.button("👤 Profile", use_container_width=True):
+            st.switch_page("pages/Profile.py")
+
+    else:
+
+        if st.button("🏠 Dashboard", use_container_width=True):
+            st.switch_page("pages/CustomerDashboard.py")
+
+        if st.button("📦 Plans", use_container_width=True):
+            st.rerun()
+
+        if st.button("🔄 My Subscription", use_container_width=True):
+            st.switch_page("pages/Subscriptions.py")
+
+        if st.button("🧾 My Invoices", use_container_width=True):
+            st.switch_page("pages/MyInvoices.py")
+
+        if st.button("👤 Profile", use_container_width=True):
+            st.switch_page("pages/Profile.py")
 
     st.divider()
 
@@ -435,6 +454,44 @@ for plan in plans:
         else:
 
             if plan["status"] == "active":
+
+                sub_col1, sub_col2 = st.columns([1, 3])
+
+                with sub_col1:
+
+                    if st.button(
+                        "✅ Subscribe Now",
+                        key=f"subscribe_{plan['id']}",
+                        use_container_width=True,
+                        type="primary",
+                    ):
+
+                        sub_response = requests.post(
+                            f"{API_URL}/subscriptions/",
+                            json={"plan_id": plan["id"]},
+                            headers=get_headers(),
+                        )
+
+                        if sub_response.status_code == 200:
+                            st.session_state["last_subscribed_plan"] = plan["name"]
+                            st.success(
+                                f"🎉 Subscribed to **{plan['name']}**! "
+                                "An invoice has been generated automatically."
+                            )
+                            if st.button(
+                                "🧾 View My Invoice",
+                                key=f"view_invoice_{plan['id']}",
+                            ):
+                                st.switch_page("pages/MyInvoices.py")
+                        else:
+                            try:
+                                st.error(
+                                    sub_response.json()["detail"]
+                                )
+                            except Exception:
+                                st.error(
+                                    "Unable to subscribe to this plan."
+                                )
 
                 with st.expander(
                     "📄 View Plan Details"

@@ -49,4 +49,4 @@ if st.button("Back"):
     if user["role"] == "admin":
         st.switch_page("pages/AdminDashboard.py")
     else:
-        st.switch_page("pages/UserDashboard.py")
+        st.switch_page("pages/CustomerDashboard.py")

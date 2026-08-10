@@ -86,9 +86,6 @@ with st.sidebar:
     if st.button("📦 Plans", use_container_width=True):
         st.switch_page("pages/Plans.py")
 
-    if st.button("🔄 Subscriptions", use_container_width=True):
-        st.switch_page("pages/Subscriptions.py")
-
     if st.button("🧾 Invoices", use_container_width=True):
         st.switch_page("pages/Invoices.py")
 
@@ -141,38 +138,33 @@ st.divider()
 
 # ---------------- Quick Actions ----------------
 
-
 st.subheader("⚡ Quick Actions")
 
-q1, q2, q3, q4 = st.columns(4)
+q1, q2, q3 = st.columns(3)
 
 with q1:
     if st.button(
         "👥 Manage Customers",
-        use_container_width=True
+        use_container_width=True,
+        key="admin_manage_customers"
     ):
         st.switch_page("pages/Customers.py")
 
 with q2:
     if st.button(
         "📦 Manage Plans",
-        use_container_width=True
+        use_container_width=True,
+        key="admin_manage_plans"
     ):
         st.switch_page("pages/Plans.py")
 
 with q3:
     if st.button(
         "🧾 Manage Invoices",
-        use_container_width=True
+        use_container_width=True,
+        key="admin_manage_invoices"
     ):
         st.switch_page("pages/Invoices.py")
-
-with q4:
-    if st.button(
-        "🧾 Manage Invoices",
-        use_container_width=True
-    ):
-        st.divider()
 
 # ---------------- Bottom Section ----------------
 
@@ -217,7 +209,7 @@ st.subheader("🚀 Upcoming Modules")
 m1, m2, m3 = st.columns(3)
 
 with m1:
-    st.info("🧾 Invoice Management")
+    st.info(" Notification part")
 
 with m2:
     st.info("💳 Payment Processing")

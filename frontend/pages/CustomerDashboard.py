@@ -1,4 +1,7 @@
+import requests
 import streamlit as st
+from config import API_URL
+from utils import get_headers
 from auth import logout
 from styles import load_css
 
@@ -93,6 +96,9 @@ with st.sidebar:
     if st.button("🔄 My Subscription", use_container_width=True):
         st.switch_page("pages/Subscriptions.py")
 
+    if st.button("🧾 My Invoices", use_container_width=True):
+        st.switch_page("pages/MyInvoices.py")
+
     if st.button("👤 My Profile", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
@@ -114,23 +120,59 @@ Manage your subscription, explore available plans and monitor your billing from 
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------- Overview ----------------
+# ---------------- Overview (live data) ----------------
 
 st.subheader("📊 Subscription Overview")
+
+plan_name = "No Plan"
+status_label = "None"
+renewal_date = "--"
+amount_paid = "$0.00"
+
+try:
+    sub_resp = requests.get(f"{API_URL}/subscriptions/my", headers=get_headers())
+
+    if sub_resp.status_code == 200:
+        subscription = sub_resp.json()
+        status_label = subscription.get("status", "unknown").capitalize()
+
+        period_end = subscription.get("current_period_end")
+        if period_end:
+            renewal_date = period_end[:10]
+
+        plan_resp = requests.get(
+            f"{API_URL}/plans/{subscription['plan_id']}",
+            headers=get_headers(),
+        )
+        if plan_resp.status_code == 200:
+            plan_name = plan_resp.json().get("name", plan_name)
+
+        inv_resp = requests.get(
+            f"{API_URL}/invoices/my",
+            headers=get_headers(),
+            params={"page": 1, "page_size": 1, "sort_by": "created_at", "sort_order": "desc"},
+        )
+        if inv_resp.status_code == 200:
+            items = inv_resp.json().get("items", [])
+            if items:
+                amount_paid = f"${items[0].get('total_amount', 0.0):.2f}"
+
+except Exception:
+    pass
 
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
-    st.metric("📦 Active Plan", "No Plan")
+    st.metric("📦 Active Plan", plan_name)
 
 with c2:
-    st.metric("🔄 Status", "Inactive")
+    st.metric("🔄 Status", status_label)
 
 with c3:
-    st.metric("📅 Renewal Date", "--")
+    st.metric("📅 Renewal Date", renewal_date)
 
 with c4:
-    st.metric("💰 Amount Paid", "₹0")
+    st.metric("💰 Latest Invoice", amount_paid)
 
 st.divider()
 
@@ -138,7 +180,7 @@ st.divider()
 
 st.subheader("⚡ Quick Actions")
 
-q1, q2, q3 = st.columns(3)
+q1, q2, q3, q4 = st.columns(4)
 
 with q1:
 
@@ -157,6 +199,14 @@ with q2:
         st.switch_page("pages/Subscriptions.py")
 
 with q3:
+
+    if st.button(
+        "🧾 My Invoices",
+        use_container_width=True
+    ):
+        st.switch_page("pages/MyInvoices.py")
+
+with q4:
 
     if st.button(
         "👤 My Profile",
