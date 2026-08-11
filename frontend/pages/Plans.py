@@ -5,6 +5,32 @@ from utils import get_headers
 from auth import logout
 from styles import load_css
 
+
+def format_api_error(response, fallback="Something went wrong."):
+    """
+    FastAPI returns `detail` as a plain string for HTTPException,
+    but as a list of validation-error objects for a 422 (e.g. Pydantic
+    Field constraints). Handle both so the UI never dumps a raw list.
+    """
+    try:
+        detail = response.json().get("detail", fallback)
+    except Exception:
+        return fallback
+
+    if isinstance(detail, str):
+        return detail
+
+    if isinstance(detail, list):
+        messages = []
+        for err in detail:
+            field = ".".join(str(p) for p in err.get("loc", [])[1:])
+            msg = err.get("msg", "Invalid value")
+            messages.append(f"{field}: {msg}" if field else msg)
+        return " | ".join(messages) if messages else fallback
+
+    return fallback
+
+
 # ---------------- Load Common CSS ----------------
 
 load_css()
@@ -192,14 +218,9 @@ if user["role"] == "admin":
                         st.rerun()
 
                     else:
-                        try:
-                            st.error(
-                                response.json()["detail"]
-                            )
-                        except Exception:
-                            st.error(
-                                "Unable to create plan."
-                            )
+                        st.error(
+                            format_api_error(response, "Unable to create plan.")
+                        )
 
     st.divider()
 
@@ -328,7 +349,7 @@ for plan in plans:
                     new_duration = st.number_input(
                         "Duration (Days)",
                         min_value=1,
-                        value=int(plan["duration"]),
+                        value=max(1, int(plan["duration"])),
                         key=f"duration_{plan['id']}"
                     )
 
@@ -370,14 +391,9 @@ for plan in plans:
                             st.rerun()
 
                         else:
-                            try:
-                                st.error(
-                                    response.json()["detail"]
-                                )
-                            except Exception:
-                                st.error(
-                                    "Unable to update plan."
-                                )
+                            st.error(
+                                format_api_error(response, "Unable to update plan.")
+                            )
 
                 # ---------------- Deactivate Plan ----------------
 
@@ -446,6 +462,106 @@ for plan in plans:
                 st.warning(
                     "This plan is currently inactive."
                 )
+
+                # ---------------- Edit Inactive Plan ----------------
+
+                with st.expander("✏️ Edit Plan"):
+
+                    new_name = st.text_input(
+                        "Plan Name",
+                        value=plan["name"],
+                        key=f"name_inactive_{plan['id']}"
+                    )
+
+                    new_description = st.text_area(
+                        "Description",
+                        value=plan["description"],
+                        key=f"description_inactive_{plan['id']}"
+                    )
+
+                    new_price = st.number_input(
+                        "Price",
+                        min_value=0.0,
+                        value=float(plan["price"]),
+                        format="%.2f",
+                        key=f"price_inactive_{plan['id']}"
+                    )
+
+                    new_duration = st.number_input(
+                        "Duration (Days)",
+                        min_value=1,
+                        value=max(1, int(plan["duration"])),
+                        key=f"duration_inactive_{plan['id']}"
+                    )
+
+                    new_status = st.selectbox(
+                        "Status",
+                        ["active", "inactive"],
+                        index=1,
+                        key=f"status_inactive_{plan['id']}"
+                    )
+
+                    if st.button(
+                        "💾 Update Plan",
+                        key=f"update_inactive_{plan['id']}",
+                        use_container_width=True
+                    ):
+
+                        payload = {
+                            "name": new_name,
+                            "description": new_description,
+                            "price": new_price,
+                            "duration": new_duration,
+                            "status": new_status,
+                        }
+
+                        response = requests.put(
+                            f"{API_URL}/plans/{plan['id']}",
+                            json=payload,
+                            headers=get_headers()
+                        )
+
+                        if response.status_code == 200:
+                            st.success(
+                                "✅ Plan updated successfully."
+                            )
+                            st.rerun()
+
+                        else:
+                            st.error(
+                                format_api_error(response, "Unable to update plan.")
+                            )
+
+                # ---------------- Reactivate Plan ----------------
+
+                if st.button(
+                    "🔁 Reactivate Plan",
+                    key=f"reactivate_{plan['id']}",
+                    use_container_width=True,
+                    type="primary",
+                ):
+
+                    payload = {
+                        "name": plan["name"],
+                        "description": plan["description"],
+                        "price": plan["price"],
+                        "duration": max(1, int(plan["duration"])),
+                        "status": "active",
+                    }
+
+                    response = requests.put(
+                        f"{API_URL}/plans/{plan['id']}",
+                        json=payload,
+                        headers=get_headers()
+                    )
+
+                    if response.status_code == 200:
+                        st.success("✅ Plan reactivated successfully.")
+                        st.rerun()
+                    else:
+                        st.error(
+                            format_api_error(response, "Unable to reactivate plan.")
+                        )
 
         # ==================================================
         # CUSTOMER FEATURES
