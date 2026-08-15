@@ -1,8 +1,14 @@
+import requests
 import streamlit as st
+
+from config import API_URL
+from utils import get_headers
 from auth import logout
 from styles import load_css
 
+
 load_css()
+
 
 # ---------------- Authentication ----------------
 
@@ -26,7 +32,6 @@ st.set_page_config(
     page_icon="💳",
     layout="wide"
 )
-
 
 
 # ---------------- Custom CSS ----------------
@@ -101,8 +106,6 @@ with st.sidebar:
 
 # ---------------- Hero Banner ----------------
 
-# ---------------- Hero Banner ----------------
-
 st.markdown(
     f"""
     <div class="hero-banner">
@@ -118,20 +121,113 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------------- Overview ----------------
+
+# ---------------- Overview (Live Data) ----------------
 
 st.subheader("📊 Platform Overview")
+
+customer_count = 0
+plan_count = 0
+total_revenue = 0.0
+
+
+try:
+
+    # ---------- Customers ----------
+
+    customer_resp = requests.get(
+        f"{API_URL}/customers/",
+        headers=get_headers()
+    )
+
+    if customer_resp.status_code == 200:
+
+        customer_data = customer_resp.json()
+
+        # Backend returns total_customers directly
+        customer_count = customer_data.get("total_customers", 0)
+
+
+    # ---------- Plans ----------
+
+    plan_resp = requests.get(
+        f"{API_URL}/plans/",
+        headers=get_headers()
+    )
+
+    if plan_resp.status_code == 200:
+
+        plan_data = plan_resp.json()
+
+        # If API returns a list
+        if isinstance(plan_data, list):
+            plan_count = len(plan_data)
+
+        # If API returns paginated response
+        elif isinstance(plan_data, dict):
+            plan_items = plan_data.get("items", [])
+            plan_count = len(plan_items)
+
+
+    # ---------- Revenue ----------
+
+    invoice_resp = requests.get(
+        f"{API_URL}/invoices/",
+        headers=get_headers(),
+        params={
+            "page": 1,
+            "page_size": 1000,
+            "sort_by": "created_at",
+            "sort_order": "desc"
+        }
+    )
+
+    if invoice_resp.status_code == 200:
+
+        invoice_data = invoice_resp.json()
+
+        # If API returns a list
+        if isinstance(invoice_data, list):
+            invoices = invoice_data
+
+        # If API returns paginated response
+        elif isinstance(invoice_data, dict):
+            invoices = invoice_data.get("items", [])
+
+        else:
+            invoices = []
+
+        total_revenue = sum(
+            float(invoice.get("total_amount", 0) or 0)
+            for invoice in invoices
+        )
+
+
+except Exception:
+    pass
+
+
+# ---------- Display Overview ----------
 
 c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.metric("👥 Customers", "0")
+    st.metric(
+        "👥 Customers",
+        customer_count
+    )
 
 with c2:
-    st.metric("📦 Plans", "0")
+    st.metric(
+        "📦 Plans",
+        plan_count
+    )
 
 with c3:
-    st.metric("💰 Revenue", "₹0")
+    st.metric(
+        "💰 Revenue",
+        f"₹{total_revenue:,.2f}"
+    )
 
 st.divider()
 
@@ -150,6 +246,7 @@ with q1:
     ):
         st.switch_page("pages/Customers.py")
 
+
 with q2:
     if st.button(
         "📦 Manage Plans",
@@ -157,6 +254,7 @@ with q2:
         key="admin_manage_plans"
     ):
         st.switch_page("pages/Plans.py")
+
 
 with q3:
     if st.button(
@@ -166,9 +264,11 @@ with q3:
     ):
         st.switch_page("pages/Invoices.py")
 
+
 # ---------------- Bottom Section ----------------
 
 left, right = st.columns([2, 1])
+
 
 # ---------- Recent Activity ----------
 
