@@ -1,18 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PlanCreate(BaseModel):
     name: str
     description: str
-    price: float
-    duration: int
+    price: float = Field(ge=0)
+    duration: int = Field(gt=0)
 
 
 class PlanUpdate(BaseModel):
     name: str
     description: str
-    price: float
-    duration: int
+    price: float = Field(ge=0)
+    duration: int = Field(gt=0)
     status: str
 
 

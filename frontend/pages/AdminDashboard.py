@@ -1,7 +1,17 @@
+import requests
 import streamlit as st
+
+from config import API_URL
+from utils import get_headers
 from auth import logout
+from styles import load_css
+
+
+load_css()
+
 
 # ---------------- Authentication ----------------
+
 if "token" not in st.session_state:
     st.switch_page("pages/Login.py")
 
@@ -14,56 +24,48 @@ if user["role"] != "admin":
     st.error("Access Denied")
     st.stop()
 
+
 # ---------------- Page Config ----------------
+
 st.set_page_config(
     page_title="Admin Dashboard",
     page_icon="💳",
     layout="wide"
 )
 
+
 # ---------------- Custom CSS ----------------
-st.markdown("""
-<style>
 
-[data-testid="stSidebar"]{
-    background:#0F172A;
-}
+st.markdown(
+    """
+    <style>
 
-[data-testid="stSidebar"] *{
-    color:white;
-}
+    .hero-banner {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        padding: 35px 40px;
+        border-radius: 18px;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
+    }
 
-.block-container{
-    padding-top:2rem;
-    padding-bottom:2rem;
-}
+    .hero-content h1 {
+        color: white;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
 
-div[data-testid="metric-container"]{
-    background:white;
-    border:1px solid #E5E7EB;
-    border-radius:15px;
-    padding:18px;
-    box-shadow:0px 3px 10px rgba(0,0,0,.08);
-}
+    .hero-content p {
+        color: #e0ecff;
+        font-size: 17px;
+        margin: 0;
+    }
 
-.banner{
-    background:linear-gradient(90deg,#2563EB,#1D4ED8);
-    padding:25px;
-    border-radius:18px;
-    color:white;
-    margin-bottom:20px;
-}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-.section{
-    background:#F8FAFC;
-    padding:18px;
-    border-radius:15px;
-    border:1px solid #E5E7EB;
-    height:100%;
-}
-
-</style>
-""", unsafe_allow_html=True)
 
 # ---------------- Sidebar ----------------
 
@@ -89,8 +91,8 @@ with st.sidebar:
     if st.button("📦 Plans", use_container_width=True):
         st.switch_page("pages/Plans.py")
 
-    if st.button("🔄 Subscriptions", use_container_width=True):
-        st.info("Subscriptions module coming soon.")
+    if st.button("🧾 Invoices", use_container_width=True):
+        st.switch_page("pages/Invoices.py")
 
     if st.button("👤 Profile", use_container_width=True):
         st.switch_page("pages/Profile.py")
@@ -101,37 +103,134 @@ with st.sidebar:
         logout()
         st.switch_page("app.py")
 
+
 # ---------------- Hero Banner ----------------
 
-st.markdown(f"""
-<div class="banner">
+st.markdown(
+    f"""
+    <div class="hero-banner">
+        <div class="hero-content">
+            <h1>Welcome, {user['username']}! 👋</h1>
+            <p>
+                Manage customers, plans, invoices, subscriptions
+                and monitor your billing platform from one place.
+            </p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-<h2>👋 Welcome back, {user['username']}</h2>
 
-Manage customers, plans, subscriptions and monitor your billing platform from one place.
-
-</div>
-""", unsafe_allow_html=True)
-
-# ---------------- Overview ----------------
+# ---------------- Overview (Live Data) ----------------
 
 st.subheader("📊 Platform Overview")
 
-c1, c2, c3, c4 = st.columns(4)
+customer_count = 0
+plan_count = 0
+total_revenue = 0.0
+
+
+try:
+
+    # ---------- Customers ----------
+
+    customer_resp = requests.get(
+        f"{API_URL}/customers/",
+        headers=get_headers()
+    )
+
+    if customer_resp.status_code == 200:
+
+        customer_data = customer_resp.json()
+
+        # Backend returns total_customers directly
+        customer_count = customer_data.get("total_customers", 0)
+
+
+    # ---------- Plans ----------
+
+    plan_resp = requests.get(
+        f"{API_URL}/plans/",
+        headers=get_headers()
+    )
+
+    if plan_resp.status_code == 200:
+
+        plan_data = plan_resp.json()
+
+        # If API returns a list
+        if isinstance(plan_data, list):
+            plan_count = len(plan_data)
+
+        # If API returns paginated response
+        elif isinstance(plan_data, dict):
+            plan_items = plan_data.get("items", [])
+            plan_count = len(plan_items)
+
+
+    # ---------- Revenue ----------
+
+    invoice_resp = requests.get(
+        f"{API_URL}/invoices/",
+        headers=get_headers(),
+        params={
+            "page": 1,
+            "page_size": 1000,
+            "sort_by": "created_at",
+            "sort_order": "desc"
+        }
+    )
+
+    if invoice_resp.status_code == 200:
+
+        invoice_data = invoice_resp.json()
+
+        # If API returns a list
+        if isinstance(invoice_data, list):
+            invoices = invoice_data
+
+        # If API returns paginated response
+        elif isinstance(invoice_data, dict):
+            invoices = invoice_data.get("items", [])
+
+        else:
+            invoices = []
+
+        total_revenue = sum(
+            float(invoice.get("total_amount", 0) or 0)
+            for invoice in invoices
+        )
+
+
+except Exception:
+    pass
+
+
+# ---------- Display Overview ----------
+
+c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.metric("👤 Users", "1")
+    st.metric(
+        "👥 Customers",
+        customer_count
+    )
 
 with c2:
-    st.metric("👥 Customers", "0")
+    st.metric(
+        "📦 Plans",
+        plan_count
+    )
 
 with c3:
-    st.metric("📦 Plans", "0")
-
-with c4:
-    st.metric("💰 Revenue", "₹0")
+    st.metric(
+        "💰 Revenue",
+        f"₹{total_revenue:,.2f}"
+    )
 
 st.divider()
+
 
 # ---------------- Quick Actions ----------------
 
@@ -140,34 +239,36 @@ st.subheader("⚡ Quick Actions")
 q1, q2, q3 = st.columns(3)
 
 with q1:
-
     if st.button(
         "👥 Manage Customers",
-        use_container_width=True
+        use_container_width=True,
+        key="admin_manage_customers"
     ):
         st.switch_page("pages/Customers.py")
 
-with q2:
 
+with q2:
     if st.button(
         "📦 Manage Plans",
-        use_container_width=True
+        use_container_width=True,
+        key="admin_manage_plans"
     ):
         st.switch_page("pages/Plans.py")
 
+
 with q3:
-
     if st.button(
-        "🔄 Manage Subscriptions",
-        use_container_width=True
+        "🧾 Manage Invoices",
+        use_container_width=True,
+        key="admin_manage_invoices"
     ):
-        st.info("Subscriptions module coming soon.")
+        st.switch_page("pages/Invoices.py")
 
-st.divider()
 
 # ---------------- Bottom Section ----------------
 
-left, right = st.columns([2,1])
+left, right = st.columns([2, 1])
+
 
 # ---------- Recent Activity ----------
 
@@ -179,9 +280,10 @@ with left:
 
     st.info("📦 No plans created yet")
 
-    st.info("🧾 Invoice module coming soon")
+    st.info(" Invoice Module Active")
 
     st.info("💳 Payment module coming soon")
+
 
 # ---------- System Status ----------
 
@@ -195,20 +297,19 @@ with right:
 
     st.success("✅ Database Connected")
 
-    st.warning("⏳ Subscription Module Pending")
+    st.success("✅ Subscription Module Active")
 
-    st.warning("⏳ Invoice Module Pending")
+    st.success("✅ Invoice Module Active")
 
-st.divider()
 
-# ---------------- Future Modules ----------------
+# ---------- Upcoming Modules ----------
 
 st.subheader("🚀 Upcoming Modules")
 
 m1, m2, m3 = st.columns(3)
 
 with m1:
-    st.info("🧾 Invoice Management")
+    st.info(" Notification part")
 
 with m2:
     st.info("💳 Payment Processing")

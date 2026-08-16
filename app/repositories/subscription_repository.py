@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import case
 
 from app.models.subscription import Subscription
 
@@ -21,6 +22,13 @@ def get_user_subscription(
         db.query(Subscription)
         .filter(
             Subscription.user_id == user_id
+        )
+        .order_by(
+            # Prefer an active subscription over any old
+            # cancelled/expired ones; among ties, prefer
+            # the most recently created row.
+            case((Subscription.status == "active", 0), else_=1),
+            Subscription.id.desc(),
         )
         .first()
     )
@@ -52,3 +60,15 @@ def update_subscription(
     db.commit()
     db.refresh(subscription)
     return subscription
+
+def get_subscription_by_id(
+    db: Session,
+    subscription_id: int,
+):
+    return (
+        db.query(Subscription)
+        .filter(
+            Subscription.id == subscription_id
+        )
+        .first()
+    )
