@@ -1,9 +1,11 @@
 from pydantic import BaseModel, EmailStr
 
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    role: str = "customer"  # "admin" or "customer"
+    role: str = "customer"
+
 
 class UserResponse(BaseModel):
     id: int
@@ -13,10 +15,21 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
 
-class SetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    reset_token: str
+    new_password: str

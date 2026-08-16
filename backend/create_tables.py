@@ -8,6 +8,7 @@ from app.models.payment import Payment
 from app.models.payment_retry import PaymentRetry
 from app.models.audit_log import AuditLog
 from app.models.user import User
+from app.models.refund import Refund
 
 Base.metadata.create_all(bind=engine)
 print("All tables created successfully")
