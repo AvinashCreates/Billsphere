@@ -36,6 +36,9 @@ with st.sidebar:
     if st.button("Subscriptions", use_container_width=True):
         st.info("Subscriptions module coming soon.")
 
+    if st.button("🔔 Notifications", use_container_width=True):
+        st.switch_page("pages/Notifications.py")
+
     if st.button("Profile", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
