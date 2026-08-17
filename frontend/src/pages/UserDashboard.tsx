@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CreditCard, CheckCircle, Clock, XCircle, Hourglass, ArrowUpCircle } from "lucide-react";
 import {
@@ -36,7 +36,7 @@ function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<number | null>(null);
 
-  function load() {
+  const load = useCallback(() => {
     setLoading(true);
     getMySubscriptions()
       .then(setSubscriptions)
@@ -48,11 +48,20 @@ function UserDashboard() {
         });
       })
       .finally(() => setLoading(false));
-  }
+  }, [notify]);
 
   useEffect(() => {
-    load();
-  }, []);
+    getMySubscriptions()
+      .then(setSubscriptions)
+      .catch(() => {
+        notify({
+          title: "Subscription load failed",
+          description: "Unable to fetch your current subscription status.",
+          variant: "error",
+        });
+      })
+      .finally(() => setLoading(false));
+  }, [notify]);
 
   const active = useMemo(() => subscriptions.filter((s) => s.status === "active"), [subscriptions]);
   const trial = useMemo(() => subscriptions.filter((s) => s.status === "trial"), [subscriptions]);
