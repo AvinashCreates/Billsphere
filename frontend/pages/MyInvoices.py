@@ -210,7 +210,113 @@ else:
                 st.metric("Total", f"${total_amt:.2f}")
                 st.write(f"**Status:** {badge}")
                 st.write(f"**Payment:** `{pay_status}`")
+                if status in ("pending", "overdue") and pay_status == "unpaid":
+                   if st.button("Pay Now", key=f"pay_{inv_id}", type="primary"):
+                       st.session_state[f"show_payment_{inv_id}"] = True
 
+            if st.session_state.get(f"show_payment_{inv_id}", False):
+                  st.markdown("### Make Payment")
+
+                  payment_method = st.selectbox(
+                                "Payment Method",
+                                 ["upi", "card", "bank_transfer"],
+                                 key=f"method_{inv_id}",
+                  )
+
+                  payment_identifier = st.text_input(
+                                 "Payment Details",
+                                  placeholder=(
+                                      "Enter UPI ID"
+                                       if payment_method == "upi"
+                                       else "Enter mock card number"
+                                       if payment_method == "card"
+                                       else "Enter bank reference"
+                                  ),
+                                  key=f"payment_identifier_{inv_id}",
+                  )
+
+                  col_pay, col_cancel = st.columns(2)
+
+                  with col_pay:
+
+                        if st.button(
+                            "Pay Now",
+                             key=f"confirm_pay_{inv_id}",
+                             type="primary",
+                        ):
+
+                              if not payment_identifier.strip():
+                                 st.warning("Please enter your payment details.")
+                              else:
+                                 try:
+                                     payment_response = requests.post(
+                                                       f"{API_URL}/payments/mock",
+                                                       headers=get_headers(),
+                                                       json={
+                                                           "invoice_id": inv_id,
+                                                           "payment_method": payment_method,
+                                                           "payment_identifier": payment_identifier,
+                                                        },
+                                      )
+
+
+                                     if payment_response.status_code == 200:
+
+                                         result = payment_response.json() 
+
+                                         if result.get("success"):
+
+                                               st.success(
+                                                      result.get(
+                                                           "message",
+                                                           "Payment successful.",
+                                                       )
+                                                )
+
+                                               st.session_state[
+                                                       f"show_payment_{inv_id}"
+                                                ] = False
+
+                                               st.rerun()
+
+                                         else:
+
+                                               st.error(
+                                                   result.get(
+                                                     "message",
+                                                 "    Payment failed.",
+                                                )
+                                               )
+
+                                     else:
+                                          try:
+                                             error_detail = payment_response.json().get(
+                                                             "detail",
+                                                             "Payment failed.",
+                                                            )
+                                          except Exception:
+                                                error_detail = "Payment failed."
+
+                                          st.error(error_detail)
+
+                                 except Exception as e:
+                                         st.error(
+                                             f"Unable to process payment: {e}"
+                                          )
+
+
+                  with col_cancel:
+
+                       if st.button(
+                               "Cancel",
+                                 key=f"cancel_pay_{inv_id}",
+                        ):
+                             st.session_state[
+                             f"show_payment_{inv_id}"
+                             ] = False
+
+                             st.rerun()
+            
             with st.expander("📄 View Full Invoice"):
 
                 detail_resp = requests.get(
