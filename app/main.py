@@ -5,6 +5,7 @@ from app.api.customer import router as customer_router
 from app.api.plans import router as plan_router
 from app.api.subscriptions import router as subscription_router
 from app.api.invoices import router as invoice_router
+from app.api.payments import router as payment_router
 
 from app.database.database import engine
 from app.database.base import Base
@@ -30,6 +31,7 @@ app.include_router(customer_router)
 app.include_router(plan_router)
 app.include_router(subscription_router)
 app.include_router(invoice_router)
+app.include_router(payment_router)
 
 
 
