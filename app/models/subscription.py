@@ -1,13 +1,26 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    Boolean,
+)
+
 from datetime import datetime, UTC
 
 from app.database.base import Base
 
 
 class Subscription(Base):
+
     __tablename__ = "subscriptions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     user_id = Column(
         Integer,
@@ -38,5 +51,11 @@ class Subscription(Base):
 
     current_period_end = Column(
         DateTime,
+        nullable=False
+    )
+
+    renewal_reminder_sent = Column(
+        Boolean,
+        default=False,
         nullable=False
     )
