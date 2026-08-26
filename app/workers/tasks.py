@@ -11,6 +11,9 @@ from app.models.subscription import Subscription
 # CONFIGURATION
 # ==========================================================
 
+# Send renewal reminder when subscription expires
+# within this many days.
+
 RENEWAL_REMINDER_DAYS = 3
 
 
@@ -61,11 +64,20 @@ def check_subscriptions():
             db.query(Subscription)
             .filter(
                 Subscription.status == "active",
+
                 Subscription.current_period_end > now,
+
                 Subscription.current_period_end <= reminder_limit,
+
+                # IMPORTANT:
+                # Only subscriptions for which
+                # reminder has not already been sent.
+                Subscription.renewal_reminder_sent.is_(False),
             )
             .all()
         )
+
+        reminder_count = 0
 
         for subscription in approaching_subscriptions:
 
@@ -74,9 +86,19 @@ def check_subscriptions():
                 f"is approaching expiry."
             )
 
+            # --------------------------------------------------
+            # Mark reminder as sent BEFORE queuing the task.
+            # This prevents duplicate reminders when Celery Beat
+            # runs again.
+            # --------------------------------------------------
+
+            subscription.renewal_reminder_sent = True
+
             send_renewal_reminder.delay(
                 subscription.id
             )
+
+            reminder_count += 1
 
         # --------------------------------------------------
         # 2. Find expired subscriptions
@@ -86,6 +108,7 @@ def check_subscriptions():
             db.query(Subscription)
             .filter(
                 Subscription.status == "active",
+
                 Subscription.current_period_end <= now,
             )
             .all()
@@ -105,13 +128,17 @@ def check_subscriptions():
                 f"has expired."
             )
 
+        # --------------------------------------------------
+        # Commit all changes
+        # --------------------------------------------------
+
         db.commit()
 
         return {
             "checked_at": now.isoformat(),
-            "approaching_renewals": len(
-                approaching_subscriptions
-            ),
+
+            "approaching_renewals": reminder_count,
+
             "expired_subscriptions": expired_count,
         }
 
@@ -142,9 +169,14 @@ def send_renewal_reminder(
         f"subscription {subscription_id}"
     )
 
-    # Email notification will be implemented here.
+    # ------------------------------------------------------
+    # Email notification will be implemented later.
+    # ------------------------------------------------------
 
     return {
         "subscription_id": subscription_id,
-        "message": "Renewal reminder triggered",
+
+        "message": (
+            "Renewal reminder triggered"
+        ),
     }
