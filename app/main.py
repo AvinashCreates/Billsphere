@@ -1,4 +1,6 @@
+import os
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app.api.auth import router as auth_router
 from app.api.users import router as users_router
 from app.api.customer import router as customer_router
@@ -24,6 +26,9 @@ from app.models.audit_log import AuditLog
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Billing Platform API")
+
+os.makedirs("uploads/profile_pictures", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(auth_router)
 app.include_router(users_router)

@@ -15,8 +15,9 @@ class CustomerResponse(BaseModel):
     subscription_status: Optional[str] = None
     total_invoices: int = 0
     total_spent: float = 0.0
-
+    profile_picture: str | None = None
     model_config = ConfigDict(from_attributes=True)
+    
 
 
 class CustomerListResponse(BaseModel):

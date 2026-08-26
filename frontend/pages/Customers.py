@@ -369,26 +369,97 @@ if response.status_code == 200:
                 # ------------------------------------------------
                 # Customer Information
                 # ------------------------------------------------
-
                 with col1:
 
+                # ------------------------------------------------
+                # Customer Profile Picture
+                # ------------------------------------------------
+
+                    profile_picture = customer.get(
+                         "profile_picture"
+                    )
+
+                    if profile_picture:
+
+                       st.markdown(
+                          f"""
+                          <div style="
+                               width:70px;
+                               height:70px;
+                               border-radius:50%;
+                               overflow:hidden;
+                               margin-bottom:10px;
+                               border:2px solid #2563eb;
+                          ">
+                               <img
+                                  src="{API_URL}{profile_picture}"
+                                  style="
+                                     width:100%;
+                                     height:100%;
+                                     object-fit:cover;
+                                  "
+                                />
+                           </div>
+                           """,
+                           unsafe_allow_html=True,
+                    )
+
+                    else:
+
+                        
+                          # Show first-letter avatar ONLY when no profile picture exists
+                          username = customer.get("username", "U")
+
+                          first_letter = (
+                          username[0].upper()
+                          if username
+                          else "U"
+                          )
+
+                          st.markdown(
+                                 f"""
+                                 <div style="
+                                 width:70px;
+                                 height:70px;
+                                 border-radius:50%;
+                                 background:linear-gradient(
+                                            135deg,
+                                            #2563eb,
+                                            #1d4ed8
+                                            );
+                                 display:flex;
+                                 align-items:center;
+                                 justify-content:center;
+                                 color:white;
+                                 font-size:28px;
+                                 font-weight:700;
+                                 margin-bottom:10px;
+                                 ">
+                                     {first_letter}
+                                 </div>
+                                  """,
+                                  unsafe_allow_html=True,
+                            )
+
+
                     st.subheader(
-                        f"👤 {customer['username']}"
+                                customer["username"]
                     )
-
                     st.caption(
-                        f"Customer ID: #{customer['id']}"
+                             f"Customer ID: #{customer['id']}"
                     )
 
                     st.write(
-                        f"**Email:** "
-                        f"{customer['email']}"
+                             f"**Email:** "
+                             f"{customer['email']}"
                     )
 
                     st.write(
-                        f"**Role:** "
-                        f"{customer['role']}"
+                             f"**Role:** "
+                             f"{customer['role']}"
                     )
+                
+                
 
 
                 # ------------------------------------------------

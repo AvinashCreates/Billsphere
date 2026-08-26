@@ -1,8 +1,15 @@
 import streamlit as st
 
+import io
+from PIL import Image
+from streamlit_cropper import st_cropper
+
 from auth import logout
 from styles import load_css
 
+import requests
+from config import API_URL
+from utils import get_headers
 
 # ==========================================================
 # Load Common CSS
@@ -260,30 +267,49 @@ with st.container(border=True):
 
         first_letter = username[0].upper()
 
-        st.markdown(
-            f"""
-            <div style="
-                width:120px;
-                height:120px;
-                border-radius:50%;
-                background:linear-gradient(
-                    135deg,
-                    #2563eb,
-                    #1d4ed8
-                );
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                color:white;
-                font-size:48px;
-                font-weight:700;
-                margin:auto;
-            ">
-                {first_letter}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        profile_picture = user.get("profile_picture")
+
+        if profile_picture:
+            st.markdown(
+                f"""
+                <div style="
+                    width:120px;
+                    height:120px;
+                    border-radius:50%;
+                    overflow:hidden;
+                    margin:auto;
+                ">
+                    <img src="{API_URL}{profile_picture}"
+                         style="width:100%; height:100%; object-fit:cover;" />
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"""
+                <div style="
+                    width:120px;
+                    height:120px;
+                    border-radius:50%;
+                    background:linear-gradient(
+                        135deg,
+                        #2563eb,
+                        #1d4ed8
+                    );
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    color:white;
+                    font-size:48px;
+                    font-weight:700;
+                    margin:auto;
+                ">
+                    {first_letter}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         st.markdown(
             f"### {username}"
@@ -292,17 +318,123 @@ with st.container(border=True):
         if user["role"] == "admin":
             st.info("🛡 Administrator")
         else:
-            st.info("👥 Customer")
+            st.info("👤 Customer")
 
+with st.expander("📷 Change Profile Picture"):
+
+    # ------------------------------------------------------
+    # Show success message after upload
+    # ------------------------------------------------------
+    if st.session_state.get("profile_picture_updated"):
+        st.success("✅ Profile picture uploaded successfully.")
+
+        # Clear the flag after displaying the message
+        st.session_state["profile_picture_updated"] = False
+
+    else:
+
+        uploaded_file = st.file_uploader(
+            "Upload a new picture",
+            type=["png", "jpg", "jpeg", "webp", "jfif"],
+            key="profile_pic_uploader",
+        )
+
+        if uploaded_file is not None:
+
+            try:
+                image = Image.open(uploaded_file).convert("RGB")
+
+                st.caption(
+                    "Drag the box to choose what shows in your profile circle:"
+                )
+
+                cropped_image = st_cropper(
+                    image,
+                    aspect_ratio=(1, 1),
+                    box_color="#2563eb",
+                    realtime_update=True,
+                    key="profile_pic_cropper",
+                )
+
+                preview_col, _ = st.columns([1, 3])
+
+                with preview_col:
+                    st.caption("Preview")
+
+                    st.image(
+                        cropped_image.resize((120, 120)),
+                        width=120,
+                    )
+
+                if st.button(
+                    "Upload",
+                    key="upload_pic_btn",
+                    use_container_width=True,
+                ):
+
+                    buffer = io.BytesIO()
+
+                    cropped_image.save(
+                        buffer,
+                        format="PNG",
+                    )
+
+                    buffer.seek(0)
+
+                    files = {
+                        "file": (
+                            "profile.png",
+                            buffer.getvalue(),
+                            "image/png",
+                        )
+                    }
+
+                    response = requests.post(
+                        f"{API_URL}/users/me/profile-picture",
+                        files=files,
+                        headers=get_headers(),
+                    )
+
+                    if response.status_code == 200:
+
+                        # Update current user information
+                        st.session_state["user"] = response.json()
+
+                        # Tell next Streamlit run to show success only
+                        st.session_state["profile_picture_updated"] = True
+
+                        # Clear uploader/cropper state
+                        for key in [
+                            "profile_pic_uploader",
+                            "profile_pic_cropper",
+                        ]:
+                            st.session_state.pop(key, None)
+
+                        st.rerun()
+
+                    else:
+
+                        try:
+                            detail = response.json().get(
+                                "detail",
+                                "Failed to upload profile picture.",
+                            )
+                        except Exception:
+                            detail = "Failed to upload profile picture."
+
+                        st.error(detail)
+
+            except Exception as exc:
+
+                st.error(
+                    f"Unable to process the selected image: {exc}"
+                )
 
     # ------------------------------------------------------
     # Personal Information
     # ------------------------------------------------------
 
-    # ------------------------------------------------------
-# Personal Information
-# ------------------------------------------------------
-
+  
 with col2:
 
     st.markdown("### 📋 Personal Information")
@@ -333,6 +465,39 @@ with col2:
 
         st.divider()
 
+        with st.expander("✏️ Edit Username"):
+
+            with st.form("edit_username_form"):
+
+                new_username = st.text_input(
+                    "New Username",
+                    value=user.get("username", ""),
+                )
+
+                submitted = st.form_submit_button(
+                    "Save Changes",
+                    use_container_width=True,
+                )
+
+                if submitted:
+
+                    response = requests.put(
+                        f"{API_URL}/users/me",
+                        json={"username": new_username},
+                        headers=get_headers(),
+                    )
+
+                    if response.status_code == 200:
+                        st.session_state["user"] = response.json()
+                        st.success("Username updated!")
+                        st.rerun()
+                    else:
+                        try:
+                            st.error(response.json()["detail"])
+                        except Exception:
+                            st.error("Failed to update username.")
+
+        
 
 
     # Account Role

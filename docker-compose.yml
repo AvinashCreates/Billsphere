@@ -18,8 +18,7 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
 
-      DATABASE_URL: postgresql://postgres:admin@host.docker.internal:5432/billing_platform
-
+      DATABASE_URL:  "postgresql://postgres:Lucky02%40@host.docker.internal:5432/billing_platform"
     depends_on:
       - redis
 
@@ -34,7 +33,6 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
 
-      DATABASE_URL: postgresql://postgres:admin@host.docker.internal:5432/billing_platform
-
+      DATABASE_URL:   "postgresql://postgres:Lucky02%40@host.docker.internal:5432/billing_platform"
     depends_on:
       - redis

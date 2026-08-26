@@ -17,4 +17,6 @@ class User(Base):
 
     role = Column(String, default="user")
 
-    created_at = Column(DateTime,default=lambda: datetime.now(UTC))
+    profile_picture = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))

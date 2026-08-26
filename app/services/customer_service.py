@@ -80,16 +80,20 @@ def _enrich_customers(db: Session, customers: list[User]) -> list[dict]:
         stats = stats_by_user.get(c.id)
 
         enriched.append({
-            "id": c.id,
-            "username": c.username,
-            "email": c.email,
-            "role": c.role,
-            "created_at": c.created_at,
-            "current_plan": plan.name if plan else None,
-            "subscription_status": sub.status if sub else None,
-            "total_invoices": stats.total_invoices if stats else 0,
-            "total_spent": float(stats.total_spent) if stats else 0.0,
-        })
+               "id": c.id,
+               "username": c.username,
+               "email": c.email,
+               "role": c.role,
+               "created_at": c.created_at,
+
+               # Customer profile picture
+               "profile_picture": c.profile_picture,
+
+               "current_plan": plan.name if plan else None,
+               "subscription_status": sub.status if sub else None,
+               "total_invoices": stats.total_invoices if stats else 0,
+               "total_spent": float(stats.total_spent) if stats else 0.0,
+       })
 
     return enriched
 
