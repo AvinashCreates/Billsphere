@@ -2,6 +2,13 @@ from sqlalchemy.orm import Session
 from datetime import datetime, UTC, timedelta
 
 from app.services.invoice_service import generate_invoice
+from app.services.notifications import (
+    notify_subscription_created,
+    notify_subscription_blocked,
+    notify_subscription_unblocked,
+    notify_subscription_expired,
+    notify_invoice_generated,
+)
 from app.models.subscription import Subscription
 from app.models.plan import Plan
 
@@ -87,7 +94,7 @@ def subscribe(
         subscription,
     )
 
-    generate_invoice(
+    invoice = generate_invoice(
          db=db,
          subscription_id=subscription.id,
          user_id=subscription.user_id,
@@ -95,6 +102,12 @@ def subscribe(
          billing_period_start=subscription.current_period_start,
          billing_period_end=subscription.current_period_end,
     )
+
+    # --- Task 3 integration: notify on subscribe + invoice generated ---
+    notify_subscription_created(db, user_id, selected_plan)
+
+    if invoice is not None:
+        notify_invoice_generated(db, user_id, invoice.id, selected_plan.price)
 
     return subscription
 
@@ -146,10 +159,14 @@ def block_subscription(
 
     subscription.status = "blocked"
 
-    return update_subscription(
+    subscription = update_subscription(
         db,
         subscription,
     )
+
+    notify_subscription_blocked(db, subscription.user_id, subscription.id)
+
+    return subscription
 
 
 # ==========================================================
@@ -173,10 +190,15 @@ def unblock_subscription(
 
     subscription.status = "active"
 
-    return update_subscription(
+    subscription = update_subscription(
         db,
         subscription,
     )
+
+    notify_subscription_unblocked(db, subscription.user_id, subscription.id)
+
+    return subscription
+
 
 def get_subscription(
     db: Session,
@@ -186,6 +208,7 @@ def get_subscription(
         db,
         subscription_id,
     )
+
 
 def edit_subscription(
     db: Session,
@@ -225,6 +248,7 @@ def edit_subscription(
         subscription,
     )
 
+
 # ==========================================================
 # CANCEL SUBSCRIPTION
 # ==========================================================
@@ -252,6 +276,7 @@ def cancel_subscription(
         db,
         subscription,
     )
+
 
 # ==========================================================
 # RENEW SUBSCRIPTION
@@ -305,6 +330,7 @@ def renew_subscription(
         subscription,
     )
 
+
 # ==========================================================
 # EXPIRE SUBSCRIPTION
 # ==========================================================
@@ -333,7 +359,11 @@ def expire_subscription(
 
     subscription.status = "expired"
 
-    return update_subscription(
+    subscription = update_subscription(
         db,
         subscription,
     )
+
+    notify_subscription_expired(db, subscription.user_id, subscription.id)
+
+    return subscription

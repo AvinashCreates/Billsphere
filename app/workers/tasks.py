@@ -5,6 +5,12 @@ from sqlalchemy.orm import Session
 from app.workers.celery_app import celery_app
 from app.database.database import SessionLocal
 from app.models.subscription import Subscription
+from app.models.notification import Notification
+
+from app.services.notifications import (
+    notify_subscription_renewal_due,
+    notify_subscription_expired,
+)
 
 
 # ==========================================================
@@ -115,12 +121,16 @@ def check_subscriptions():
         )
 
         expired_count = 0
+        newly_expired_ids = []
 
         for subscription in expired_subscriptions:
 
             subscription.status = "expired"
 
             expired_count += 1
+            newly_expired_ids.append(
+                (subscription.id, subscription.user_id)
+            )
 
             print(
                 f"Subscription "
@@ -133,6 +143,16 @@ def check_subscriptions():
         # --------------------------------------------------
 
         db.commit()
+
+        # --------------------------------------------------
+        # Task 3 integration: fire expiry notifications only
+        # AFTER the status change is safely committed, so a
+        # notification is never created for a subscription
+        # whose "expired" status didn't actually persist.
+        # --------------------------------------------------
+
+        for subscription_id, user_id in newly_expired_ids:
+            notify_subscription_expired(db, user_id, subscription_id)
 
         return {
             "checked_at": now.isoformat(),
@@ -169,14 +189,113 @@ def send_renewal_reminder(
         f"subscription {subscription_id}"
     )
 
-    # ------------------------------------------------------
-    # Email notification will be implemented later.
-    # ------------------------------------------------------
+    db: Session = SessionLocal()
 
-    return {
-        "subscription_id": subscription_id,
+    try:
+        subscription = (
+            db.query(Subscription)
+            .filter(Subscription.id == subscription_id)
+            .first()
+        )
 
-        "message": (
-            "Renewal reminder triggered"
-        ),
-    }
+        if not subscription:
+            print(
+                f"send_renewal_reminder: subscription "
+                f"{subscription_id} not found, skipping."
+            )
+            return {
+                "subscription_id": subscription_id,
+                "message": "Subscription not found",
+            }
+
+        now = datetime.now(UTC)
+        period_end = subscription.current_period_end
+
+        if period_end.tzinfo is None:
+            period_end = period_end.replace(tzinfo=UTC)
+
+        days_left = max((period_end - now).days, 0)
+
+        notify_subscription_renewal_due(
+            db,
+            subscription.user_id,
+            subscription.id,
+            days_left,
+        )
+
+        return {
+            "subscription_id": subscription_id,
+            "message": "Renewal reminder triggered",
+            "days_left": days_left,
+        }
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# NOTIFICATION DELIVERY TASK
+# ==========================================================
+#
+# Worker-side delivery task for Task 3. Pulled off the Redis queue by
+# the SAME worker process as the tasks above (registered on this app's
+# celery_app, not a separate one) after a notification is queued via
+# app.services.notifications._create_and_queue().
+
+@celery_app.task(
+    name="send_notification_task",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=30,
+)
+def send_notification_task(self, notification_id: int):
+
+    db: Session = SessionLocal()
+
+    try:
+        notification = (
+            db.query(Notification)
+            .filter(Notification.id == notification_id)
+            .first()
+        )
+
+        if not notification:
+            print(
+                f"send_notification_task: notification "
+                f"{notification_id} not found, skipping."
+            )
+            return
+
+        try:
+            if notification.channel == "email":
+                _send_email(notification)
+            # channel == "in_app" needs no extra delivery step - the DB
+            # row itself is what the frontend polls / displays.
+
+            notification.status = "sent"
+            notification.sent_at = datetime.now(UTC)
+            db.commit()
+
+        except Exception as exc:
+            notification.status = "failed"
+            db.commit()
+            print(f"Failed to deliver notification {notification_id}: {exc}")
+            raise self.retry(exc=exc)
+
+    finally:
+        db.close()
+
+
+def _send_email(notification: Notification):
+    """
+    Placeholder for real email delivery (SMTP / SendGrid / SES / etc).
+    For now this just logs, so the pipeline is fully testable without
+    any email provider credentials. Swap the body of this function for
+    a real provider call when real SMTP credentials are available -
+    everything upstream (queueing, retries, status tracking) stays the
+    same.
+    """
+    print(
+        f"EMAIL -> user_id={notification.user_id} | "
+        f"{notification.title} | {notification.message}"
+    )

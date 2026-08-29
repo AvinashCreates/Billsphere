@@ -94,6 +94,9 @@ with st.sidebar:
     if st.button("🧾 Invoices", use_container_width=True):
         st.switch_page("pages/Invoices.py")
 
+    if st.button("🔔 Notifications", use_container_width=True):
+        st.switch_page("pages/Notifications.py")
+
     if st.button("👤 Profile", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
@@ -280,9 +283,11 @@ with left:
 
     st.info("📦 No plans created yet")
 
-    st.info(" Invoice Module Active")
+    st.info("🧾 Invoice Module Active")
 
-    st.info("💳 Payment module coming soon")
+    st.info("💳 Payment Module Active (API only - no admin UI yet)")
+
+    st.info("🔔 Notification Module Active")
 
 
 # ---------- System Status ----------
@@ -301,18 +306,19 @@ with right:
 
     st.success("✅ Invoice Module Active")
 
+    st.success("✅ Payment Module Active")
+
+    st.success("✅ Notification Module Active")
+
 
 # ---------- Upcoming Modules ----------
 
 st.subheader("🚀 Upcoming Modules")
 
-m1, m2, m3 = st.columns(3)
+m1, m2 = st.columns(2)
 
 with m1:
-    st.info(" Notification part")
+    st.info("📅 Admin Billing Calendar")
 
 with m2:
-    st.info("💳 Payment Processing")
-
-with m3:
     st.info("📊 Reports & Analytics")
