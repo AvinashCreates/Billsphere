@@ -10,6 +10,7 @@ from app.api.subscriptions import router as subscription_router
 from app.api.invoices import router as invoice_router
 from app.api.payments import router as payment_router
 from app.api.notifications import router as notification_router
+from app.api.calendar import router as calendar_router
 
 from app.database.database import engine
 from app.database.base import Base
@@ -39,6 +40,7 @@ app.include_router(subscription_router)
 app.include_router(invoice_router)
 app.include_router(payment_router)
 app.include_router(notification_router)
+app.include_router(calendar_router)
 
 
 @app.get("/")

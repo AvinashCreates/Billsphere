@@ -97,6 +97,9 @@ with st.sidebar:
     if st.button("🔔 Notifications", use_container_width=True):
         st.switch_page("pages/Notifications.py")
 
+    if st.button("Billing Calendar", use_container_width=True):
+        st.switch_page("pages/BillingCalendar.py")
+
     if st.button("👤 Profile", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
