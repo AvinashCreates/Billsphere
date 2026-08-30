@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PulseFlow | Premium Music</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">P</span>
+          <span>PulseFlow</span>
+        </div>
+        <nav class="nav-links">
+          <a href="#plans">Plans</a>
+          <a href="#features">Features</a>
+          <a href="#support">Support</a>
+        </nav>
+        <button class="ghost-btn">Log in</button>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <span class="tag">Music without limits</span>
+            <h1>Stream the sound you love, everywhere.</h1>
+            <p>
+              Listen to ad-free music, create your own playlists, unlock premium quality,
+              and enjoy seamless listening across all your devices.
+            </p>
+            <div class="hero-actions">
+              <a class="primary-btn" href="#plans">View plans</a>
+              <button class="secondary-btn" id="trialBtn">Start free trial</button>
+            </div>
+            <div class="trust-row">
+              <span>18M+ songs</span>
+              <span>4.9 rating</span>
+              <span>90K playlists</span>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <div class="mini-player">
+              <div class="album-art"></div>
+              <div>
+                <p class="track-name">Midnight Drive</p>
+                <p class="track-artist">Nova Echo</p>
+              </div>
+            </div>
+            <div class="player-bars">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="stats-grid">
+              <div>
+                <strong>1.2B</strong>
+                <span>streams</span>
+              </div>
+              <div>
+                <strong>24/7</strong>
+                <span>smart mix</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="plans-section" id="plans">
+          <div class="section-head">
+            <span class="tag">Choose a plan</span>
+            <h2>Simple pricing for every listener.</h2>
+          </div>
+
+          <div class="plans-grid" id="plansGrid"></div>
+        </section>
+
+        <section class="features-section" id="features">
+          <div class="feature-panel">
+            <h3>Why listeners choose PulseFlow</h3>
+            <ul>
+              <li>Offline listening and voice control</li>
+              <li>Curated playlists and personalized recommendations</li>
+              <li>Lossless sound quality on premium plans</li>
+              <li>Family sharing and multi-device access</li>
+            </ul>
+          </div>
+          <div class="feature-panel">
+            <h3>Built for everyday listening</h3>
+            <ul>
+              <li>Switch seamlessly between phone, laptop, and car</li>
+              <li>Discover trending music and podcasts</li>
+              <li>Organize your library on one dashboard</li>
+              <li>Enjoy a smooth experience on all connected devices</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="planTemplate">
+      <article class="plan-card">
+        <div class="plan-top">
+          <div>
+            <p class="plan-name"></p>
+            <p class="plan-desc"></p>
+          </div>
+          <span class="plan-popular hidden">Popular</span>
+        </div>
+
+        <div class="plan-price-block">
+          <span class="plan-price"></span>
+          <span class="plan-cycle"></span>
+        </div>
+
+        <ul class="plan-features"></ul>
+
+        <button class="plan-btn">Select plan</button>
+      </article>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
