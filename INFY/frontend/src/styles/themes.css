@@ -1,0 +1,360 @@
+/* BillSphere Theme System - Token-based Swappable Themes */
+
+/* ============================================================================
+   THEME 1: LEDGER (Default - calm fintech navy + green)
+   ============================================================================ */
+
+:root[data-theme="ledger"][data-mode="light"] {
+  --surface-0: #F4F5F2;
+  --surface-1: #FFFFFF;
+  --text-primary: #0F1A2B;
+  --text-secondary: #4A5568;
+  --text-muted: #8A93A3;
+  --border: #E2E4E0;
+  --accent: #3D6E5C;
+  --accent-hover: #335C4E;
+  --on-accent: #EAF3EE;
+  --danger: #B3413A;
+  --warning: #B98A2E;
+  --success: #2F7D5A;
+}
+
+:root[data-theme="ledger"][data-mode="dark"] {
+  --surface-0: #0F1A2B;
+  --surface-1: #16202F;
+  --text-primary: #EDEFF3;
+  --text-secondary: #A9B1BE;
+  --text-muted: #6E7889;
+  --border: #26344A;
+  --accent: #4E8E77;
+  --accent-hover: #5EA189;
+  --on-accent: #0B120E;
+  --danger: #D8695F;
+  --warning: #D9A94A;
+  --success: #5BAE8B;
+}
+
+/* ============================================================================
+   THEME 2: GOLD (Premium - black/white + gold accent)
+   ============================================================================ */
+
+:root[data-theme="gold"][data-mode="light"] {
+  --surface-0: #FAFAF8;
+  --surface-1: #FFFFFF;
+  --text-primary: #0B0B0C;
+  --text-secondary: #55534C;
+  --text-muted: #918E82;
+  --border: #E7E3D8;
+  --accent: #B8892B;
+  --accent-hover: #A67A22;
+  --on-accent: #1A1400;
+  --danger: #A3372F;
+  --warning: #B8892B;
+  --success: #2F7D5A;
+}
+
+:root[data-theme="gold"][data-mode="dark"] {
+  --surface-0: #0B0B0C;
+  --surface-1: #17171A;
+  --text-primary: #F5F1E6;
+  --text-secondary: #B8B2A0;
+  --text-muted: #79766A;
+  --border: #2C2A24;
+  --accent: #D4AF37;
+  --accent-hover: #E0BE55;
+  --on-accent: #17130A;
+  --danger: #D8695F;
+  --warning: #D4AF37;
+  --success: #5BAE8B;
+}
+
+/* ============================================================================
+   THEME 3: SLATE (Neutral - for admin/dashboard-dense screens)
+   ============================================================================ */
+
+:root[data-theme="slate"][data-mode="light"] {
+  --surface-0: #F1F2F4;
+  --surface-1: #FFFFFF;
+  --text-primary: #161A20;
+  --text-secondary: #565C66;
+  --text-muted: #8D9199;
+  --border: #DEE1E5;
+  --accent: #3B5DE0;
+  --accent-hover: #2E49B8;
+  --on-accent: #F3F5FF;
+  --danger: #C33F3F;
+  --warning: #B07B22;
+  --success: #2F7D5A;
+}
+
+:root[data-theme="slate"][data-mode="dark"] {
+  --surface-0: #111418;
+  --surface-1: #1A1E24;
+  --text-primary: #E7E9EC;
+  --text-secondary: #9AA0AB;
+  --text-muted: #6B7178;
+  --border: #2A2F37;
+  --accent: #6B8AF0;
+  --accent-hover: #8AA3F3;
+  --on-accent: #0B1230;
+  --danger: #E17575;
+  --warning: #D9A94A;
+  --success: #5BAE8B;
+}
+
+/* ============================================================================
+   GLOBAL TOKENS (Shared across all themes)
+   ============================================================================ */
+
+:root {
+  --radius: 10px;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-voice: 'Fraunces', Georgia, serif;
+}
+
+/* ============================================================================
+   BASE ELEMENT STYLING (applies to all themes)
+   ============================================================================ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+/* ============================================================================
+   SEMANTIC ELEMENT STYLES
+   ============================================================================ */
+
+/* Backgrounds */
+.surface-0 {
+  background-color: var(--surface-0);
+}
+
+.surface-1 {
+  background-color: var(--surface-1);
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Borders */
+.border-default {
+  border-color: var(--border);
+}
+
+.divider {
+  border-color: var(--border);
+}
+
+/* Accent/Interactive */
+.accent {
+  color: var(--accent);
+}
+
+.accent-bg {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.accent-bg:hover {
+  background-color: var(--accent-hover);
+}
+
+.accent-border {
+  border-color: var(--accent);
+}
+
+.accent-text {
+  color: var(--accent);
+}
+
+/* Status colors */
+.status-success {
+  color: var(--success);
+  background-color: var(--success);
+}
+
+.status-danger {
+  color: var(--danger);
+  background-color: var(--danger);
+}
+
+.status-warning {
+  color: var(--warning);
+  background-color: var(--warning);
+}
+
+/* Badge base styles */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-success {
+  background-color: var(--success);
+  color: var(--on-accent);
+}
+
+.badge-danger {
+  background-color: var(--danger);
+  color: #FFFFFF;
+}
+
+.badge-warning {
+  background-color: var(--warning);
+  color: var(--on-accent);
+}
+
+/* Button base styles */
+button {
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--on-accent);
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+}
+
+.btn-primary:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--surface-1);
+  border-color: var(--accent);
+}
+
+/* Card base styles */
+.card {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Input base styles */
+input,
+textarea,
+select {
+  background-color: var(--surface-1);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(61, 110, 92, 0.1);
+}
+
+/* Link styles */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+a:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Selection highlight */
+::selection {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+/* ============================================================================
+   ACCESSIBILITY & MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   TYPOGRAPHY
+   ============================================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.voice-font {
+  font-family: var(--font-voice);
+}
+
+/* For special premium typography - plan price, invoice total, dashboard headline */
+.voice-accent {
+  font-family: var(--font-voice);
+  color: var(--accent);
+}
