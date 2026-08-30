@@ -10,6 +10,7 @@ Endpoints:
 from fastapi import (
     APIRouter,
     Depends,
+    HTTPException,
     Query,
     status,
 )
@@ -23,6 +24,8 @@ from app.dependencies import (
 
 from app.models.payment import Payment
 from app.models.invoice import Invoice
+from app.models.customer import Customer
+from app.models.user import User
 from app.schemas.payment import (
     PaymentRefundRequest,
     PaymentResponse,
@@ -40,6 +43,12 @@ router = APIRouter(
     prefix="/refunds",
     tags=["Refunds"],
 )
+
+
+def _owner_scope(db: Session, current_user: dict):
+    owner_id = int(current_user["sub"])
+    user = db.query(User).filter(User.id == owner_id).first()
+    return owner_id, user and user.role == "admin"
 
 
 # ==========================================================
@@ -70,12 +79,12 @@ def list_refunds(
     Get paginated list of refunds with refund reason and status.
     """
 
-    owner_id = int(current_user["sub"])
+    owner_id, is_admin = _owner_scope(db, current_user)
 
     # Query payments that have been refunded
-    query = db.query(Payment).filter(
+    query = db.query(Payment).join(Invoice, Invoice.id == Payment.invoice_id).join(Customer, Customer.id == Invoice.customer_id).filter(
         and_(
-            Payment.owner_id == owner_id,
+            Customer.owner_id == owner_id if not is_admin else Customer.id.isnot(None),
             Payment.refunded_amount > 0,
             Payment.refund_reason.isnot(None),
         )
@@ -140,19 +149,17 @@ def create_refund(
     - reason (required)
     """
 
-    owner_id = int(current_user["sub"])
+    owner_id, is_admin = _owner_scope(db, current_user)
 
     # Verify payment exists and belongs to user
-    payment = db.query(Payment).filter(
+    payment = db.query(Payment).join(Invoice, Invoice.id == Payment.invoice_id).join(Customer, Customer.id == Invoice.customer_id).filter(
         and_(
             Payment.id == payment_id,
-            Payment.owner_id == owner_id,
+            Customer.owner_id == owner_id if not is_admin else Customer.id.isnot(None),
         )
     ).first()
 
     if not payment:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Payment not found",
@@ -195,19 +202,17 @@ def get_refund_details(
     Get detailed information about a specific refund.
     """
 
-    owner_id = int(current_user["sub"])
+    owner_id, is_admin = _owner_scope(db, current_user)
 
-    refund = db.query(Payment).filter(
+    refund = db.query(Payment).join(Invoice, Invoice.id == Payment.invoice_id).join(Customer, Customer.id == Invoice.customer_id).filter(
         and_(
             Payment.id == refund_id,
-            Payment.owner_id == owner_id,
+            Customer.owner_id == owner_id if not is_admin else Customer.id.isnot(None),
             Payment.refunded_amount > 0,
         )
     ).first()
 
     if not refund:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Refund not found",

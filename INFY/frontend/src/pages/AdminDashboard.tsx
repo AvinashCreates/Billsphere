@@ -120,6 +120,29 @@ interface Payment {
   paid_at?: string;
 }
 
+interface Refund {
+  id: number;
+  payment_id: number;
+  invoice_id?: number;
+  amount?: number | string;
+  refunded_amount?: number | string;
+  refund_reason?: string;
+  refund_status?: string;
+  refunded_at?: string;
+  created_at?: string;
+}
+
+interface AuditLog {
+  id: number;
+  user_id?: number | null;
+  action: string;
+  module: string;
+  description?: string | null;
+  entity_id?: number | null;
+  entity_type?: string | null;
+  created_at: string;
+}
+
 const navigationItems: {
   id: Section;
   label: string;
@@ -282,6 +305,8 @@ export default function AdminDashboard() {
     useState<Subscription[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [refunds, setRefunds] = useState<Refund[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -390,6 +415,8 @@ export default function AdminDashboard() {
         apiRequest("/subscriptions"),
         apiRequest("/invoices"),
         apiRequest("/payments"),
+        apiRequest("/refunds?page=1&page_size=100"),
+        apiRequest("/audit-logs?page=1&page_size=100"),
       ]);
 
       const [
@@ -398,6 +425,8 @@ export default function AdminDashboard() {
         subscriptionsResult,
         invoicesResult,
         paymentsResult,
+        refundsResult,
+        auditLogsResult,
       ] = results;
 
       if (plansResult.status === "fulfilled") {
@@ -418,6 +447,14 @@ export default function AdminDashboard() {
 
       if (paymentsResult.status === "fulfilled") {
         setPayments(extractArray(paymentsResult.value));
+      }
+
+      if (refundsResult.status === "fulfilled") {
+        setRefunds(extractArray(refundsResult.value));
+      }
+
+      if (auditLogsResult.status === "fulfilled") {
+        setAuditLogs(extractArray(auditLogsResult.value));
       }
 
       const failed = results.filter(
@@ -1738,44 +1775,69 @@ export default function AdminDashboard() {
     </>
   );
 
-  const renderNotImplemented = (
-    title: string,
-    description: string,
-    requirements: string[]
-  ) => (
+  const renderRefunds = () => (
     <>
       <div className="page-heading">
         <div>
-          <h1>{title}</h1>
-          <p>{description}</p>
+          <div className="eyebrow"><Wallet size={14} /> REFUND OPERATIONS</div>
+          <h1>Refunds</h1>
+          <p>Review refund records created by the payment engine.</p>
         </div>
       </div>
-
-      <div className="billing-warning">
-        <div className="billing-warning-icon">
-          <AlertCircle size={24} />
+      <section className="panel">
+        <div className="table-wrapper">
+          <table>
+            <thead><tr><th>Refund</th><th>Payment</th><th>Invoice</th><th>Amount</th><th>Reason</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              {refunds.map((refund) => (
+                <tr key={refund.id}>
+                  <td><strong>#{refund.id}</strong></td>
+                  <td>#{refund.payment_id}</td>
+                  <td>#{refund.invoice_id ?? "-"}</td>
+                  <td>{money(Number(refund.refunded_amount ?? refund.amount ?? 0))}</td>
+                  <td>{refund.refund_reason || "-"}</td>
+                  <td><span className={`status-badge status-${normaliseStatus(refund.refund_status)}`}>{refund.refund_status || "unknown"}</span></td>
+                  <td>{refund.refunded_at ? new Date(refund.refunded_at).toLocaleDateString() : "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!refunds.length && <div className="empty-state"><AlertCircle size={20} /><span>No refunds have been recorded.</span></div>}
         </div>
+      </section>
+    </>
+  );
 
+  const renderAuditLogs = () => (
+    <>
+      <div className="page-heading">
         <div>
-          <h3>
-            Backend endpoints for this section don't exist yet
-          </h3>
-
-          <p>
-            This dashboard doesn't fabricate data. Once the
-            corresponding FastAPI routes are added, this section
-            can display real records automatically.
-          </p>
-
-          <div className="billing-requirements">
-            {requirements.map((requirement) => (
-              <span key={requirement}>
-                {requirement}
-              </span>
-            ))}
-          </div>
+          <div className="eyebrow"><ShieldCheck size={14} /> AUDIT TRAIL</div>
+          <h1>Audit Logs</h1>
+          <p>Review recorded authentication, billing, and administrative activity.</p>
         </div>
       </div>
+      <section className="panel">
+        <div className="table-wrapper">
+          <table>
+            <thead><tr><th>ID</th><th>Action</th><th>Module</th><th>Description</th><th>Entity</th><th>Actor</th><th>Timestamp</th></tr></thead>
+            <tbody>
+              {auditLogs.map((log) => (
+                <tr key={log.id}>
+                  <td><strong>#{log.id}</strong></td>
+                  <td>{log.action}</td>
+                  <td>{log.module}</td>
+                  <td>{log.description || "-"}</td>
+                  <td>{log.entity_type ? `${log.entity_type} #${log.entity_id ?? "-"}` : "-"}</td>
+                  <td>{log.user_id ? `User #${log.user_id}` : "System"}</td>
+                  <td>{new Date(log.created_at).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!auditLogs.length && <div className="empty-state"><ShieldCheck size={20} /><span>No audit events have been recorded.</span></div>}
+        </div>
+      </section>
     </>
   );
 
@@ -2016,32 +2078,13 @@ export default function AdminDashboard() {
         return renderPlans();
 
       case "refunds":
-        return renderNotImplemented(
-          "Refunds",
-          "Refund records from the backend refund engine.",
-          [
-            "POST /refunds",
-            "GET /refunds",
-            "Refund reason",
-            "Refund status",
-          ]
-        );
+        return renderRefunds();
 
       case "analytics":
         return renderAnalytics();
 
       case "audit":
-        return renderNotImplemented(
-          "Audit Logs",
-          "A record of every admin action for compliance and tracking.",
-          [
-            "GET /audit-logs",
-            "Actor",
-            "Action",
-            "Timestamp",
-            "Target record",
-          ]
-        );
+        return renderAuditLogs();
 
       case "settings":
         return renderSettings();

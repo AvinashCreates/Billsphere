@@ -526,7 +526,7 @@ def checkout(
             f"{settings.FRONTEND_URL}/payment-confirmation?token="
             f"{quote(raw_token)}&decision=reject"
         )
-        send_payment_confirmation_notification(
+        notification = send_payment_confirmation_notification(
             db=db,
             payment_id=payment.id,
             user_id=owner_id,
@@ -547,6 +547,7 @@ def checkout(
             "confirmation_required",
             confirmation_expires_at=expires_at,
             confirmation_url=confirm_url,
+            email_delivered=notification.is_sent,
         )
     except HTTPException:
         db.rollback()
@@ -563,6 +564,7 @@ def _checkout_result(
     checkout_status: str,
     confirmation_expires_at: datetime | None = None,
     confirmation_url: str | None = None,
+    email_delivered: bool | None = None,
 ) -> dict:
     return {
         "checkout_status": checkout_status,
@@ -578,6 +580,7 @@ def _checkout_result(
         "confirmation_expires_at": confirmation_expires_at,
         "confirmation_url": confirmation_url,
         "mock_mode": True,
+        "email_delivered": email_delivered,
     }
 
 

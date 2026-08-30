@@ -61,6 +61,7 @@ export interface CheckoutResult {
   currency: string;
   confirmation_url?: string | null;
   mock_mode: boolean;
+  email_delivered?: boolean | null;
 }
 
 async function parseResponse(response: Response): Promise<unknown> {

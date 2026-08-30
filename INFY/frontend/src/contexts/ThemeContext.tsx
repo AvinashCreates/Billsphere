@@ -22,7 +22,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Read saved theme and mode from localStorage
     const savedTheme = (localStorage.getItem('billsphere-theme') as ColorTheme | null) || 'ledger';
-    const savedMode = (localStorage.getItem('billsphere-mode') as Mode | null);
+    const savedMode = (localStorage.getItem('billsphere-mode') as Mode | null) ||
+      (localStorage.getItem('theme') as Mode | null);
     
     // Determine mode: use saved, or fall back to OS preference, or default to light
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;

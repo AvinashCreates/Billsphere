@@ -6,6 +6,16 @@
 
 const API_URL = "http://127.0.0.1:8000/api/v1";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 // ============================================================
 // Types
 // ============================================================
@@ -130,6 +140,7 @@ export interface CheckoutResult {
   confirmation_expires_at?: string | null;
   confirmation_url?: string | null;
   mock_mode: boolean;
+  email_delivered?: boolean | null;
 }
 
 export interface PaymentConfirmationResult {
@@ -812,7 +823,7 @@ export async function createMockCheckout(
   const result = await parseResponse(response);
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(result, "Checkout failed"));
+    throw new ApiError(getErrorMessage(result, "Checkout failed"), response.status);
   }
 
   return result;

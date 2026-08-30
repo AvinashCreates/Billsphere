@@ -57,23 +57,9 @@ function AppContent() {
   // ====================================================
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-
-    const shouldUseDark =
-      savedTheme === "dark" ||
-      (!savedTheme && prefersDark);
-
-    document.documentElement.classList.toggle(
-      "dark",
-      shouldUseDark
-    );
-
-    document.documentElement.style.colorScheme =
-      shouldUseDark ? "dark" : "light";
+    const mode = document.documentElement.getAttribute("data-mode") || "light";
+    document.documentElement.classList.toggle("dark", mode === "dark");
+    document.documentElement.style.colorScheme = mode;
   }, [location.pathname]);
 
   return (

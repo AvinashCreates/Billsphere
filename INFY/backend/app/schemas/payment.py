@@ -90,6 +90,7 @@ class CheckoutResponse(BaseModel):
     confirmation_expires_at: datetime | None = None
     confirmation_url: str | None = None
     mock_mode: bool = True
+    email_delivered: bool | None = None
 
 
 class PaymentConfirmationRequest(BaseModel):

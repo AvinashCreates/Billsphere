@@ -85,6 +85,49 @@ The BillSphere application has been successfully fixed and optimized to **10/10 
 
 **Status**: ✅ FIXED
 
+### Issue #6: Repeated Checkout Conflict
+**Problem**: Repeated Pay clicks returned HTTP 409 after the first checkout
+created a pending or active subscription.
+
+**Fix Applied**:
+- The frontend now treats this protected duplicate response as an existing
+   pending checkout instead of a generic payment failure.
+- Duplicate protection remains enabled so repeated clicks cannot create
+   duplicate subscriptions, invoices, or payments.
+- The pending screen exposes the one-time confirmation link as a fallback.
+
+**Status**: ✅ HANDLED WITHOUT DUPLICATE BILLING
+
+### Issue #7: Payment Confirmation Email Delivery
+**Problem**: The local `backend/.env` did not contain `MAIL_USERNAME` or
+`MAIL_PASSWORD`, so SMTP could not deliver email.
+
+**Fix Applied**:
+- Checkout now returns `email_delivered` and the UI reports the real outcome.
+- When SMTP is unavailable, the confirmation link remains available in the
+   pending checkout screen.
+- SMTP variables and Gmail App Password guidance are documented in
+   `backend/.env.example`.
+
+**Action Required For Inbox Delivery**: Set `MAIL_USERNAME` and
+`MAIL_PASSWORD` in `backend/.env`, restart the backend, and use a Gmail App
+Password when Gmail is the provider. Credentials are intentionally not stored
+in the repository.
+
+**Status**: ✅ NO LONGER SILENT; SMTP CONFIGURATION REQUIRED FOR INBOX DELIVERY
+
+### Issue #8: Dark Theme Consistency
+**Problem**: Route changes could overwrite the theme context's dark-mode state,
+causing inconsistent colors across pages.
+
+**Fix Applied**:
+- Route-level theme handling now reads the canonical `data-mode` attribute.
+- Legacy `theme=dark` storage is accepted for backward compatibility.
+- Shared surface, text, border, input, button, scrollbar, and focus styles use
+   theme tokens across the application.
+
+**Status**: ✅ FIXED
+
 ---
 
 ## 📊 Test Results
@@ -114,6 +157,7 @@ TOTAL: 87 PASSED (0 FAILED)
 ✅ Production assets generated successfully (largest JavaScript asset: 399.52 kB)
 ✅ No compilation errors
 ✅ ESLint completed with no errors
+```
 
 ### Latest Full Verification Run - 2026-08-30
 ```text
@@ -129,7 +173,10 @@ Admin login: successful with role=admin
 
 The warnings are dependency/runtime deprecation warnings from ReportLab and
 python-jose; they did not fail the test suite.
-```
+
+Latest focused checkout/UI verification: payment and auth tests `9 passed`,
+frontend lint passed, frontend build passed, and backend, frontend, and
+PulseFlow health checks returned HTTP 200.
 
 ---
 

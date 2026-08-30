@@ -40,6 +40,7 @@ import {
   createMockCheckout,
   getCurrentUser,
 } from "../services/api";
+import { ApiError } from "../services/api";
 
 import "./Payment.css";
 
@@ -551,6 +552,7 @@ export default function Payment() {
   // ==========================================================
 
   const [paymentPending, setPaymentPending] = useState(false);
+  const [confirmationUrl, setConfirmationUrl] = useState<string | null>(null);
 
   // ==========================================================
   // LOAD PLAN
@@ -918,15 +920,27 @@ export default function Payment() {
       );
 
       notify({
-        title: "Payment confirmation required",
+        title: checkoutResult.email_delivered === false
+          ? "Checkout created, email not delivered"
+          : "Payment confirmation required",
         description: `A confirmation email was requested for ${money(
           checkoutResult.amount,
           checkoutResult.currency
-        )}.`,
-        variant: "success",
+        )}. ${checkoutResult.email_delivered === false ? "Configure SMTP credentials or use the confirmation link shown below." : "Check your inbox for the confirmation link."}`,
+        variant: checkoutResult.email_delivered === false ? "error" : "success",
       });
+      setConfirmationUrl(checkoutResult.confirmation_url || null);
       setPaymentPending(true);
     } catch (err: any) {
+      if (err instanceof ApiError && err.status === 409) {
+        notify({
+          title: "Checkout already submitted",
+          description: "This plan already has a pending or active checkout. Check My Plan or your confirmation email before trying again.",
+          variant: "info",
+        });
+        setPaymentPending(true);
+        return;
+      }
       notify({
         title:
           "Payment could not be submitted",
@@ -1078,6 +1092,7 @@ export default function Payment() {
           price,
           currency
         )}
+        confirmationUrl={confirmationUrl}
         onBack={() =>
           navigate(
             `/customer/plans/${plan.id}/confirm`
@@ -2245,11 +2260,13 @@ function PaymentPending({
   plan,
   email,
   amount,
+  confirmationUrl,
   onBack,
 }: {
   plan: BackendPlan;
   email: string;
   amount: string;
+  confirmationUrl?: string | null;
   onBack: () => void;
 }) {
   return (
@@ -2319,7 +2336,7 @@ function PaymentPending({
           <div>
 
             <span>
-              Confirmation email sent to
+              {confirmationUrl ? "Confirmation email requested for" : "Confirmation email unavailable for"}
             </span>
 
             <strong>
@@ -2330,6 +2347,12 @@ function PaymentPending({
           </div>
 
         </div>
+
+        {confirmationUrl && (
+          <a className="btn-primary mt-4 inline-flex" href={confirmationUrl}>
+            Open confirmation link
+          </a>
+        )}
 
         <div className="pending-amount">
 
