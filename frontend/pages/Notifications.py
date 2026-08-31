@@ -3,6 +3,7 @@ import streamlit as st
 
 from config import API_URL
 from utils import get_headers
+from styles import load_css 
 
 # ---------------- Authentication ----------------
 
@@ -19,7 +20,7 @@ user = st.session_state["user"]
 st.set_page_config(page_title="Notifications", page_icon="🔔", layout="wide")
 
 # ---------------- Styling ----------------
-
+load_css()  
 st.markdown(
     """
     <style>
@@ -137,21 +138,27 @@ with col_refresh:
 
 with col_mark_all:
     if not view_all and st.button("Mark all as read", use_container_width=True):
-        requests.post(
+        mark_resp = requests.post(
             f"{API_URL}/notifications/read-all",
             headers=get_headers(),
         )
-        st.rerun()
+        if mark_resp.status_code == 200:
+            st.rerun()
+        else:
+            st.error(f"Could not mark all as read: {mark_resp.status_code} — {mark_resp.text}")
 
 endpoint = "/notifications/all" if view_all else "/notifications/"
 
 response = requests.get(f"{API_URL}{endpoint}", headers=get_headers())
 
 if response.status_code != 200:
-    st.error("Unable to fetch notifications.")
+    st.error(f"Unable to fetch notifications: {response.status_code} — {response.text}")
     st.stop()
 
-notifications = response.json()
+notif_data = response.json()
+# Defensive: handle either a plain list or a paginated {"items": [...]} shape,
+# matching the pattern already used for /invoices/ and /customers/.
+notifications = notif_data if isinstance(notif_data, list) else notif_data.get("items", [])
 
 if not notifications:
     st.info("No notifications yet.")
@@ -167,37 +174,45 @@ for note in notifications:
     with st.container(border=True):
         col1, col2, col3 = st.columns([5, 2, 1])
 
+        note_type = (note.get("type") or "notification").replace("_", " ")
+        note_title = note.get("title") or "Notification"
+        note_message = note.get("message") or ""
+        note_status = note.get("status") or "pending"
+        note_is_read = bool(note.get("is_read", False))
+        note_created = note.get("created_at") or ""
+        note_id = note.get("id")
+
         with col1:
             unread_dot = (
                 "<span class='notif-unread-dot'></span>"
-                if not note["is_read"] and not view_all
+                if not note_is_read and not view_all
                 else ""
             )
 
             st.markdown(
                 f"{unread_dot}"
-                f"<span class='notif-type-badge'>{note['type'].replace('_', ' ')}</span>"
-                f"&nbsp;&nbsp;<strong>{note['title']}</strong>",
+                f"<span class='notif-type-badge'>{note_type}</span>"
+                f"&nbsp;&nbsp;<strong>{note_title}</strong>",
                 unsafe_allow_html=True,
             )
-            st.write(note["message"])
+            st.write(note_message)
 
             if view_all:
-                st.caption(f"User ID: {note['user_id']}")
+                st.caption(f"User ID: {note.get('user_id', 'N/A')}")
 
         with col2:
-            status_class = STATUS_CLASS.get(note["status"], "")
+            status_class = STATUS_CLASS.get(note_status, "")
             st.markdown(
-                f"<span class='{status_class}'>{note['status'].capitalize()}</span>",
+                f"<span class='{status_class}'>{note_status.capitalize()}</span>",
                 unsafe_allow_html=True,
             )
-            st.caption(note["created_at"][:19].replace("T", " "))
+            st.caption(note_created[:19].replace("T", " ") if note_created else "N/A")
 
         with col3:
-            if not view_all and not note["is_read"]:
-                if st.button("Mark read", key=f"read_{note['id']}"):
+            if not view_all and not note_is_read and note_id is not None:
+                if st.button("Mark read", key=f"read_{note_id}"):
                     requests.post(
-                        f"{API_URL}/notifications/{note['id']}/read",
+                        f"{API_URL}/notifications/{note_id}/read",
                         headers=get_headers(),
                     )
                     st.rerun()

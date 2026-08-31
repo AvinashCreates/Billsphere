@@ -1,6 +1,7 @@
 import streamlit as st
 from auth import login
 
+from styles import load_css  
 
 # ---------------- Page Config ----------------
 st.set_page_config(
@@ -10,6 +11,7 @@ st.set_page_config(
 )
 
 # ---------------- Custom CSS ----------------
+load_css()  
 st.markdown("""
 <style>
 

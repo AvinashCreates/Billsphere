@@ -39,9 +39,14 @@ def _create_and_queue(
 
     # Imported locally so importing notification_service never requires a
     # running Celery/Redis connection (e.g. simple unit tests still work).
-    from app.tasks.notification_tasks import send_notification_task
+    from app.workers.tasks import send_notification_task
 
-    send_notification_task.delay(notification.id)
+    try:
+            send_notification_task.apply_async(args=[notification.id], ignore_result=True)
+
+    except Exception as e:
+            
+            print(f"[notifications] failed to queue task: {e}")  # or proper logging
 
     return notification
 

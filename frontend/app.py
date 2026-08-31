@@ -1,4 +1,5 @@
 import streamlit as st
+from styles import load_css 
 
 # ---------------- Redirect if already logged in ----------------
 if "token" in st.session_state:
@@ -18,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-
+load_css()
 
 # Hide Streamlit's default sidebar only on this page
 st.markdown("""

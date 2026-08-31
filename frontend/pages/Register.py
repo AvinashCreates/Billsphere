@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from config import API_URL
+from styles import load_css 
 
 # ---------------- Page Config ----------------
 
@@ -11,7 +12,7 @@ st.set_page_config(
 )
 
 # ---------------- Custom CSS ----------------
-
+load_css()   
 st.markdown("""
 <style>
 

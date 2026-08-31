@@ -102,6 +102,12 @@ with st.sidebar:
     if st.button("👤 My Profile", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
+    if st.button("🔔 Notifications", use_container_width=True):
+        st.switch_page("pages/Notifications.py")
+
+    if st.button("Try StreamFlix Demo", use_container_width=True):
+        st.switch_page("pages/DemoStreamingPlatform.py")
+
     st.divider()
 
     if st.button("🚪 Logout", use_container_width=True):
