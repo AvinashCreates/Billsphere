@@ -16,7 +16,10 @@ from app.schemas.notification import (
     TestNotificationRequest,
 )
 
-from app.services.notification_service import (
+# NOTE: the implementation module is app/services/notifications.py, not
+# app/services/notification_service.py (that module never existed - this
+# was the known import bug flagged for this integration).
+from app.services.notifications import (
     fetch_my_notifications,
     fetch_all_notifications,
     unread_count,
@@ -39,6 +42,16 @@ def get_my_notifications(
     return fetch_my_notifications(db, current_user.id)
 
 
+# Alias for the same endpoint, matching the /notifications/me naming used
+# elsewhere in the project's route conventions (/users/me, /subscriptions/my).
+@router.get("/me", response_model=list[NotificationResponse])
+def get_my_notifications_alias(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return fetch_my_notifications(db, current_user.id)
+
+
 @router.get("/unread-count", response_model=UnreadCountResponse)
 def get_unread_count(
     current_user: User = Depends(get_current_user),
@@ -55,7 +68,7 @@ def get_all_notifications(
     return fetch_all_notifications(db)
 
 
-@router.put("/read-all")
+@router.post("/read-all")
 def read_all_notifications(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -64,7 +77,7 @@ def read_all_notifications(
     return {"message": "All notifications marked as read"}
 
 
-@router.put("/{notification_id}/read", response_model=NotificationResponse)
+@router.post("/{notification_id}/read", response_model=NotificationResponse)
 def read_notification(
     notification_id: int,
     current_user: User = Depends(get_current_user),

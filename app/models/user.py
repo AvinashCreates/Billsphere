@@ -15,6 +15,8 @@ class User(Base):
 
     hashed_password = Column(String, nullable=False)
 
-    role = Column(String, default="customer")
+    role = Column(String, default="user")
 
-    created_at = Column(DateTime,default=lambda: datetime.now(UTC))
+    profile_picture = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
