@@ -33,7 +33,7 @@ st.markdown("""
 <style>
 
 [data-testid="stSidebar"]{
-    background:#0F172A;
+    background:#16231B;
 }
 
 [data-testid="stSidebar"] *{
@@ -47,14 +47,14 @@ st.markdown("""
 
 div[data-testid="metric-container"]{
     background:white;
-    border:1px solid #E5E7EB;
+    border:1px solid #DCE5DD;
     border-radius:15px;
     padding:18px;
     box-shadow:0px 3px 10px rgba(0,0,0,.08);
 }
 
 .banner{
-    background:linear-gradient(90deg,#2563EB,#1D4ED8);
+    background:linear-gradient(90deg,#2F6D4F,#1F4D38);
     padding:25px;
     border-radius:18px;
     color:white;
@@ -62,10 +62,10 @@ div[data-testid="metric-container"]{
 }
 
 .section{
-    background:#F8FAFC;
+    background:#F6F8F4;
     padding:18px;
     border-radius:15px;
-    border:1px solid #E5E7EB;
+    border:1px solid #DCE5DD;
     height:100%;
 }
 
@@ -76,41 +76,41 @@ div[data-testid="metric-container"]{
 
 with st.sidebar:
 
-    st.markdown("# 💳 Billing Platform")
+    st.markdown("# Billing Platform")
 
     st.caption("Customer Dashboard")
 
     st.divider()
 
-    st.write(f"👤 **{user['username']}**")
-    st.write("👤 Customer")
+    st.write(f"**{user['username']}**")
+    st.write("Customer")
 
     st.divider()
 
-    if st.button("🏠 Dashboard", use_container_width=True):
+    if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
         st.rerun()
 
-    if st.button("📦 Available Plans", use_container_width=True):
+    if st.button("Available Plans", icon=":material/inventory_2:", use_container_width=True):
         st.switch_page("pages/Plans.py")
 
-    if st.button("🔄 My Subscription", use_container_width=True):
+    if st.button("My Subscription", icon=":material/autorenew:", use_container_width=True):
         st.switch_page("pages/Subscriptions.py")
 
-    if st.button("🧾 My Invoices", use_container_width=True):
+    if st.button("My Invoices", icon=":material/receipt_long:", use_container_width=True):
         st.switch_page("pages/MyInvoices.py")
 
-    if st.button("👤 My Profile", use_container_width=True):
+    if st.button("My Profile", icon=":material/person:", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
-    if st.button("🔔 Notifications", use_container_width=True):
+    if st.button("Notifications", icon=":material/notifications:", use_container_width=True):
         st.switch_page("pages/Notifications.py")
 
-    if st.button("Try StreamFlix Demo", use_container_width=True):
+    if st.button("Try StreamFlix Demo", icon=":material/play_circle:", use_container_width=True):
         st.switch_page("pages/DemoStreamingPlatform.py")
 
     st.divider()
 
-    if st.button("🚪 Logout", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
         logout()
         st.switch_page("app.py")
 
@@ -119,7 +119,7 @@ with st.sidebar:
 st.markdown(f"""
 <div class="banner">
 
-<h2>👋 Welcome back, {user['username']}</h2>
+<h2>Welcome back, {user['username']}</h2>
 
 Manage your subscription, explore available plans and monitor your billing from one place.
 
@@ -128,7 +128,7 @@ Manage your subscription, explore available plans and monitor your billing from 
 
 # ---------------- Overview (live data) ----------------
 
-st.subheader("📊 Subscription Overview")
+st.subheader("Subscription Overview")
 
 plan_name = "No Plan"
 status_label = "None"
@@ -169,29 +169,29 @@ except Exception:
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
-    st.metric("📦 Active Plan", plan_name)
+    st.metric("Active Plan", plan_name)
 
 with c2:
-    st.metric("🔄 Status", status_label)
+    st.metric("Status", status_label)
 
 with c3:
-    st.metric("📅 Renewal Date", renewal_date)
+    st.metric("Renewal Date", renewal_date)
 
 with c4:
-    st.metric("💰 Latest Invoice", amount_paid)
+    st.metric("Latest Invoice", amount_paid)
 
 st.divider()
 
 # ---------------- Quick Actions ----------------
 
-st.subheader("⚡ Quick Actions")
+st.subheader("Quick Actions")
 
 q1, q2, q3, q4 = st.columns(4)
 
 with q1:
 
     if st.button(
-        "📦 Browse Plans",
+        "Browse Plans", icon=":material/inventory_2:",
         use_container_width=True
     ):
         st.switch_page("pages/Plans.py")
@@ -199,7 +199,7 @@ with q1:
 with q2:
 
     if st.button(
-        "🔄 My Subscription",
+        "My Subscription", icon=":material/autorenew:",
         use_container_width=True
     ):
         st.switch_page("pages/Subscriptions.py")
@@ -207,7 +207,7 @@ with q2:
 with q3:
 
     if st.button(
-        "🧾 My Invoices",
+        "My Invoices", icon=":material/receipt_long:",
         use_container_width=True
     ):
         st.switch_page("pages/MyInvoices.py")
@@ -215,7 +215,7 @@ with q3:
 with q4:
 
     if st.button(
-        "👤 My Profile",
+        "My Profile", icon=":material/person:",
         use_container_width=True
     ):
         st.switch_page("pages/Profile.py")

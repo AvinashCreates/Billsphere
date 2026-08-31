@@ -3,7 +3,7 @@ import streamlit as st
 from config import API_URL
 from utils import get_headers
 from auth import logout
-from styles import load_css
+from styles import load_css, render_hero
 
 
 load_css()
@@ -47,7 +47,7 @@ st.markdown(
     <style>
 
     .hero-banner {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        background: linear-gradient(135deg, #2F6D4F, #1F4D38);
         padding: 35px 40px;
         border-radius: 18px;
         margin-bottom: 30px;
@@ -62,7 +62,7 @@ st.markdown(
     }
 
     .hero-content p {
-        color: #e0ecff;
+        color: #E4EFE7;
         font-size: 17px;
         margin: 0;
     }
@@ -80,19 +80,19 @@ st.markdown(
 
 with st.sidebar:
 
-    st.markdown("# 💳 Billing Platform")
+    st.markdown("# Billing Platform")
 
     st.caption("Customer Management")
 
     st.divider()
 
-    st.write(f"👤 **{user['username']}**")
-    st.write("🛡 Administrator")
+    st.write(f"**{user['username']}**")
+    st.write("Administrator")
 
     st.divider()
 
     if st.button(
-        "🏠 Dashboard",
+        "Dashboard", icon=":material/dashboard:",
         use_container_width=True
     ):
         st.switch_page(
@@ -100,13 +100,13 @@ with st.sidebar:
         )
 
     if st.button(
-        "👥 Customers",
+        "Customers", icon=":material/group:",
         use_container_width=True
     ):
         st.rerun()
 
     if st.button(
-        "📦 Plans",
+        "Plans", icon=":material/inventory_2:",
         use_container_width=True
     ):
         st.switch_page(
@@ -114,7 +114,7 @@ with st.sidebar:
         )
 
     if st.button(
-        "🧾 Invoices",
+        "Invoices", icon=":material/receipt_long:",
         use_container_width=True
     ):
         st.switch_page(
@@ -122,7 +122,7 @@ with st.sidebar:
         )
 
     if st.button(
-        "👤 Profile",
+        "Profile", icon=":material/person:",
         use_container_width=True
     ):
         st.switch_page(
@@ -132,7 +132,7 @@ with st.sidebar:
     st.divider()
 
     if st.button(
-        "🚪 Logout",
+        "Logout", icon=":material/logout:",
         use_container_width=True
     ):
         logout()
@@ -146,19 +146,10 @@ with st.sidebar:
 
 # ---------------- Hero Banner ----------------
 
-st.markdown(
-    """
-    <div class="hero-banner">
-        <div class="hero-content">
-            <h1>Customer Management 👥</h1>
-            <p>
-                View, search, create, and manage
-                registered customers from one place.
-            </p>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
+render_hero(
+    "Customer Management",
+    "View, search, create, and manage registered customers from one place.",
+    icon="group",
 )
 
 
@@ -179,7 +170,7 @@ search_col, _ = st.columns([2, 3])
 with search_col:
 
     search = st.text_input(
-        "🔍 Search by username or email",
+        "Search by username or email",
         key="cust_search"
     )
 
@@ -201,7 +192,7 @@ if search:
 # Create Customer
 # ==========================================================
 
-st.subheader("➕ Add New Customer")
+st.subheader("Add New Customer")
 
 with st.container(border=True):
 
@@ -235,7 +226,7 @@ with st.container(border=True):
             )
 
         submitted = st.form_submit_button(
-            "➕ Create Customer",
+            "Create Customer",
             type="primary",
             use_container_width=True
         )
@@ -321,28 +312,28 @@ if response.status_code == 200:
     # Customer Overview
     # ======================================================
 
-    st.subheader("📊 Customer Overview")
+    st.subheader("Customer Overview")
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
 
         st.metric(
-            "👥 Total Customers",
+            "Total Customers",
             total_customers
         )
 
     with c2:
 
         st.metric(
-            "📄 Current Page",
+            "Current Page",
             st.session_state["cust_page"]
         )
 
     with c3:
 
         st.metric(
-            "👤 Customers Shown",
+            "Customers Shown",
             len(customers)
         )
 
@@ -354,7 +345,7 @@ if response.status_code == 200:
     # Customer List
     # ======================================================
 
-    st.subheader("📋 Customer List")
+    st.subheader("Customer List")
 
 
     if customers:
@@ -389,7 +380,7 @@ if response.status_code == 200:
                                border-radius:50%;
                                overflow:hidden;
                                margin-bottom:10px;
-                               border:2px solid #2563eb;
+                               border:2px solid #2F6D4F;
                           ">
                                <img
                                   src="{API_URL}{profile_picture}"
@@ -424,8 +415,8 @@ if response.status_code == 200:
                                  border-radius:50%;
                                  background:linear-gradient(
                                             135deg,
-                                            #2563eb,
-                                            #1d4ed8
+                                            #2F6D4F,
+                                            #1F4D38
                                             );
                                  display:flex;
                                  align-items:center;
@@ -516,7 +507,7 @@ if response.status_code == 200:
                 # =================================================
 
                 with st.expander(
-                    "✏️ Edit / Delete"
+                    "️ Edit / Delete"
                 ):
 
                     with st.form(
@@ -560,7 +551,7 @@ if response.status_code == 200:
                         with save_col:
 
                             save = st.form_submit_button(
-                                "💾 Save Changes",
+                                "Save Changes",
                                 use_container_width=True
                             )
 
@@ -568,7 +559,7 @@ if response.status_code == 200:
                         with delete_col:
 
                             delete = st.form_submit_button(
-                                "🗑 Delete Customer",
+                                "Delete Customer",
                                 use_container_width=True
                             )
 
@@ -686,7 +677,7 @@ if response.status_code == 200:
         if (
             st.session_state["cust_page"] > 1
             and st.button(
-                "⬅ Previous",
+                "Previous", icon=":material/arrow_back:",
                 use_container_width=True
             )
         ):
@@ -710,7 +701,7 @@ if response.status_code == 200:
         if (
             st.session_state["cust_page"] < total_pages
             and st.button(
-                "Next ➡",
+                "Next", icon=":material/arrow_forward:",
                 use_container_width=True
             )
         ):
@@ -735,7 +726,7 @@ else:
 st.divider()
 
 if st.button(
-    "⬅️ Back to Dashboard",
+    "️ Back to Dashboard", icon=":material/arrow_back:",
     key="customers_back_dashboard"
 ):
 

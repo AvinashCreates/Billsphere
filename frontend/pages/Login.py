@@ -1,7 +1,7 @@
 import streamlit as st
 from auth import login
+from styles import load_css
 
-from styles import load_css  
 
 # ---------------- Page Config ----------------
 st.set_page_config(
@@ -10,13 +10,14 @@ st.set_page_config(
     layout="centered"
 )
 
+load_css()
+
 # ---------------- Custom CSS ----------------
-load_css()  
 st.markdown("""
 <style>
 
 .welcome-box{
-    background: linear-gradient(135deg,#2563EB,#1E40AF);
+    background: linear-gradient(135deg,#2F6D4F,#1F4D38);
     color: white;
     padding: 32px 28px;
     border-radius: 18px;
@@ -60,7 +61,7 @@ st.markdown("""
 # ---------------- Login Form ----------------
 with st.container(border=True):
 
-    st.subheader("🔑 Sign In")
+    st.subheader("Sign In")
     st.caption("Use your registered email and password.")
 
     email = st.text_input(
@@ -74,7 +75,7 @@ with st.container(border=True):
         placeholder="Enter your password"
     )
 
-    if st.button("Sign In", use_container_width=True):
+    if st.button("Sign In", icon=":material/login:", use_container_width=True):
 
         if not email or not password:
             st.warning("Please enter your email and password.")
@@ -101,7 +102,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-if st.button("📝 Create Account", use_container_width=True):
+if st.button("Create Account", icon=":material/person_add:", use_container_width=True):
     st.switch_page("pages/Register.py")
 
 st.caption("© 2026 Billing Platform")

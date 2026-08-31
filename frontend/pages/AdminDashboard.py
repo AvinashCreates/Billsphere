@@ -4,7 +4,7 @@ import streamlit as st
 from config import API_URL
 from utils import get_headers
 from auth import logout
-from styles import load_css
+from styles import load_css, render_hero
 
 
 load_css()
@@ -41,7 +41,7 @@ st.markdown(
     <style>
 
     .hero-banner {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        background: linear-gradient(135deg, #2F6D4F, #1F4D38);
         padding: 35px 40px;
         border-radius: 18px;
         margin-bottom: 30px;
@@ -56,7 +56,7 @@ st.markdown(
     }
 
     .hero-content p {
-        color: #e0ecff;
+        color: #E4EFE7;
         font-size: 17px;
         margin: 0;
     }
@@ -71,65 +71,56 @@ st.markdown(
 
 with st.sidebar:
 
-    st.markdown("# 💳 Billing Platform")
+    st.markdown("# Billing Platform")
 
     st.caption("Admin Dashboard")
 
     st.divider()
 
-    st.write(f"👤 **{user['username']}**")
-    st.write("🛡 Administrator")
+    st.write(f"**{user['username']}**")
+    st.write("Administrator")
 
     st.divider()
 
-    if st.button("🏠 Dashboard", use_container_width=True):
+    if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
         st.rerun()
 
-    if st.button("👥 Customers", use_container_width=True):
+    if st.button("Customers", icon=":material/group:", use_container_width=True):
         st.switch_page("pages/Customers.py")
 
-    if st.button("📦 Plans", use_container_width=True):
+    if st.button("Plans", icon=":material/inventory_2:", use_container_width=True):
         st.switch_page("pages/Plans.py")
 
-    if st.button("🧾 Invoices", use_container_width=True):
+    if st.button("Invoices", icon=":material/receipt_long:", use_container_width=True):
         st.switch_page("pages/Invoices.py")
 
-    if st.button("🔔 Notifications", use_container_width=True):
+    if st.button("Notifications", icon=":material/notifications:", use_container_width=True):
         st.switch_page("pages/Notifications.py")
 
-    if st.button("Billing Calendar", use_container_width=True):
+    if st.button("Billing Calendar", icon=":material/calendar_month:", use_container_width=True):
         st.switch_page("pages/BillingCalendar.py")
 
    
 
-    if st.button("StreamFlix Analytics", use_container_width=True):
+    if st.button("StreamFlix Analytics", icon=":material/bar_chart:", use_container_width=True):
         st.switch_page("pages/StreamFlixAdmin.py")
 
-    if st.button("👤 Profile", use_container_width=True):
+    if st.button("Profile", icon=":material/person:", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
     st.divider()
 
-    if st.button("🚪 Logout", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
         logout()
         st.switch_page("app.py")
 
 
 # ---------------- Hero Banner ----------------
 
-st.markdown(
-    f"""
-    <div class="hero-banner">
-        <div class="hero-content">
-            <h1>Welcome, {user['username']}! 👋</h1>
-            <p>
-                Manage customers, plans, invoices, subscriptions
-                and monitor your billing platform from one place.
-            </p>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
+render_hero(
+    f"Welcome, {user['username']}!",
+    "Manage customers, plans, invoices, subscriptions and monitor your billing platform from one place.",
+    icon="dashboard",
 )
 
 
@@ -220,45 +211,45 @@ except Exception as e:
     st.error(f"Invoice fetch exception: {e}")
 # ---------- Display Overview ----------
 
-st.subheader("📊 Platform Overview")
+st.subheader("Platform Overview")
 
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
-    st.metric("👥 Customers", customer_count)
+    st.metric("Customers", customer_count)
 
 with c2:
-    st.metric("🔄 Active Subscriptions", active_sub_count)
+    st.metric("Active Subscriptions", active_sub_count)
 
 with c3:
-    st.metric("💰 Revenue (Paid)", f"${total_revenue:,.2f}")
+    st.metric("Revenue (Paid)", f"${total_revenue:,.2f}")
 
 with c4:
-    st.metric("⏳ Pending Revenue", f"${pending_revenue:,.2f}")
+    st.metric("Pending Revenue", f"${pending_revenue:,.2f}")
 
 st.divider()
 
 
 # ---------------- Quick Actions ----------------
 
-st.subheader("⚡ Quick Actions")
+st.subheader("Quick Actions")
 
 q1, q2, q3, q4 = st.columns(4)
 
 with q1:
-    if st.button("👥 Manage Customers", use_container_width=True, key="admin_manage_customers"):
+    if st.button("Manage Customers", icon=":material/group:", use_container_width=True, key="admin_manage_customers"):
         st.switch_page("pages/Customers.py")
 
 with q2:
-    if st.button("📦 Manage Plans", use_container_width=True, key="admin_manage_plans"):
+    if st.button("Manage Plans", icon=":material/inventory_2:", use_container_width=True, key="admin_manage_plans"):
         st.switch_page("pages/Plans.py")
 
 with q3:
-    if st.button("🧾 Manage Invoices", use_container_width=True, key="admin_manage_invoices"):
+    if st.button("Manage Invoices", icon=":material/receipt_long:", use_container_width=True, key="admin_manage_invoices"):
         st.switch_page("pages/Invoices.py")
 
 with q4:
-    if st.button("📅 Billing Calendar", use_container_width=True, key="admin_calendar"):
+    if st.button("Billing Calendar", icon=":material/calendar_month:", use_container_width=True, key="admin_calendar"):
         st.switch_page("pages/BillingCalendar.py")
 
 
@@ -271,7 +262,7 @@ left, right = st.columns([2, 1])
 
 with left:
 
-    st.subheader("📈 Recent Activity")
+    st.subheader("Recent Activity")
 
     if recent_customers:
         st.markdown("**Recent Customers**")
@@ -287,7 +278,7 @@ with left:
     if recent_invoices:
         st.markdown("**Recent Invoices**")
         for inv in recent_invoices:
-            status_icon = "🟢" if inv.get("payment_status") == "paid" else "🟡"
+            status_icon = "" if inv.get("payment_status") == "paid" else ""
             st.write(
                 f"{status_icon} {inv.get('invoice_number', 'N/A')} — "
                 f"${inv.get('total_amount', 0.0):.2f} "
@@ -301,16 +292,16 @@ with left:
 
 with right:
 
-    st.subheader("⚙ Platform Status")
+    st.subheader("Platform Status")
 
-    st.success("✅ API Server Running")
-    st.success("✅ Authentication Enabled")
-    st.success("✅ Database Connected")
+    st.success("API Server Running")
+    st.success("Authentication Enabled")
+    st.success("Database Connected")
 
     if overdue_count > 0:
-        st.warning(f"⚠ {overdue_count} Overdue Invoice(s)")
+        st.warning(f"{overdue_count} Overdue Invoice(s)")
     else:
-        st.success("✅ No Overdue Invoices")
+        st.success("No Overdue Invoices")
 
-    st.info(f"📦 {plan_count} Plan(s) Configured")
-    st.info(f"🔄 {active_sub_count} Active Subscription(s)")
+    st.info(f"{plan_count} Plan(s) Configured")
+    st.info(f"{active_sub_count} Active Subscription(s)")

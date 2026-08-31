@@ -2,11 +2,14 @@ import requests
 import streamlit as st
 
 from config import API_URL
-from styles import load_css 
+from styles import load_css
+
 FREE_PLAY_LIMIT = 2
 
 st.set_page_config(page_title="StreamFlix", layout="wide")
-load_css()  
+
+load_css()
+
 if "streamflix_plays" not in st.session_state:
     st.session_state["streamflix_plays"] = 0
 
@@ -35,11 +38,11 @@ if is_logged_in:
 st.markdown(
     """
     <style>
-    [data-testid="stAppViewContainer"] { background: #0b0f19; }
-    [data-testid="stSidebar"] { background: #05070c; }
-    [data-testid="stSidebar"] * { color: #e5e7eb; }
+    [data-testid="stAppViewContainer"] { background: #16231B; }
+    [data-testid="stSidebar"] { background: #1F2A22; }
+    [data-testid="stSidebar"] * { color: #DCE5DD; }
     .sf-hero {
-        background: linear-gradient(135deg, #4c1d95, #7c3aed);
+        background: linear-gradient(135deg, #3D2C55, #5B3E73);
         padding: 40px;
         border-radius: 16px;
         margin-bottom: 28px;
@@ -47,20 +50,20 @@ st.markdown(
     .sf-hero h1 { color: white; font-size: 36px; margin-bottom: 6px; }
     .sf-hero p { color: #ede9fe; font-size: 16px; }
     .sf-card {
-        background: #151b2b;
+        background: #16231B;
         border-radius: 12px;
         padding: 18px;
-        color: #e5e7eb;
+        color: #DCE5DD;
         height: 100%;
     }
     .sf-card h4 { margin-bottom: 6px; }
-    .sf-card p { color: #9ca3af; font-size: 13px; }
+    .sf-card p { color: #5B6B5F; font-size: 13px; }
     .sf-badge-premium {
-        background: #16a34a; color: white; padding: 4px 12px;
+        background: #2F6D4F; color: white; padding: 4px 12px;
         border-radius: 999px; font-size: 13px; font-weight: 600;
     }
     .sf-badge-free {
-        background: #374151; color: #d1d5db; padding: 4px 12px;
+        background: #1F2A22; color: #DCE5DD; padding: 4px 12px;
         border-radius: 999px; font-size: 13px; font-weight: 600;
     }
     </style>
@@ -88,16 +91,16 @@ with st.sidebar:
     st.divider()
 
     if is_logged_in:
-        if st.button("Back to Billing Platform", use_container_width=True):
+        if st.button("Back to Billing Platform", icon=":material/arrow_back:", use_container_width=True):
             st.switch_page("pages/CustomerDashboard.py")
-        if st.button("Logout", use_container_width=True):
+        if st.button("Logout", icon=":material/logout:", use_container_width=True):
             for key in ["token", "user"]:
                 st.session_state.pop(key, None)
             st.switch_page("app.py")
     else:
-        if st.button("Log In", use_container_width=True):
+        if st.button("Log In", icon=":material/login:", use_container_width=True):
             st.switch_page("pages/Login.py")
-        if st.button("Create Account", use_container_width=True):
+        if st.button("Create Account", icon=":material/person_add:", use_container_width=True):
             st.switch_page("pages/Register.py")
 
 # ---------------- Hero ----------------
@@ -139,9 +142,9 @@ for i, (title, genre) in enumerate(TITLES):
         locked = (not is_premium) and (st.session_state["streamflix_plays"] >= FREE_PLAY_LIMIT)
 
         if locked:
-            st.button("Locked", key=f"locked_{i}", disabled=True, use_container_width=True)
+            st.button("Locked", icon=":material/lock:", key=f"locked_{i}", disabled=True, use_container_width=True)
         else:
-            if st.button("Play", key=f"play_{i}", use_container_width=True):
+            if st.button("Play", icon=":material/play_circle:", key=f"play_{i}", use_container_width=True):
                 if not is_premium:
                     st.session_state["streamflix_plays"] += 1
                 st.success(f"Now playing: {title}")
@@ -179,14 +182,14 @@ else:
     st.write("")
 
     if is_logged_in:
-        if st.button("Upgrade Now", type="primary", use_container_width=True):
+        if st.button("Upgrade Now", icon=":material/upgrade:", type="primary", use_container_width=True):
             st.switch_page("pages/Plans.py")
     else:
         st.info("Sign in or create an account to upgrade to Premium.")
         u1, u2 = st.columns(2)
         with u1:
-            if st.button("Log In", type="primary", use_container_width=True, key="upgrade_login"):
+            if st.button("Log In", icon=":material/login:", type="primary", use_container_width=True, key="upgrade_login"):
                 st.switch_page("pages/Login.py")
         with u2:
-            if st.button("Create Account", use_container_width=True, key="upgrade_register"):
+            if st.button("Create Account", icon=":material/person_add:", use_container_width=True, key="upgrade_register"):
                 st.switch_page("pages/Register.py")

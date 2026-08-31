@@ -3,7 +3,7 @@ import requests
 from config import API_URL
 from utils import get_headers
 from auth import logout
-from styles import load_css
+from styles import load_css, render_hero
 
 load_css()
 
@@ -35,7 +35,7 @@ st.markdown(
     <style>
 
     .invoice-hero-banner {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        background: linear-gradient(135deg, #2F6D4F, #1F4D38);
         padding: 35px 40px;
         border-radius: 18px;
         margin-bottom: 30px;
@@ -50,7 +50,7 @@ st.markdown(
     }
 
     .invoice-hero-banner p {
-        color: #e0ecff;
+        color: #E4EFE7;
         font-size: 17px;
         margin: 0;
     }
@@ -72,47 +72,40 @@ with st.sidebar:
 
     st.divider()
 
-    if st.button("🏠 Dashboard", use_container_width=True):
+    if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
         st.switch_page("pages/AdminDashboard.py")
 
-    if st.button("👥 Customers", use_container_width=True):
+    if st.button("Customers", icon=":material/group:", use_container_width=True):
         st.switch_page("pages/Customers.py")
 
-    if st.button("📦 Plans", use_container_width=True):
+    if st.button("Plans", icon=":material/inventory_2:", use_container_width=True):
         st.switch_page("pages/Plans.py")
 
-    if st.button("🧾 Invoices", use_container_width=True):
+    if st.button("Invoices", icon=":material/receipt_long:", use_container_width=True):
         st.rerun()
 
-    if st.button("👤 Profile", use_container_width=True):
+    if st.button("Profile", icon=":material/person:", use_container_width=True):
         st.switch_page("pages/Profile.py")
 
     st.divider()
 
-    if st.button("Logout", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
         logout()
         st.switch_page("app.py")
 
 
 # ---------------- Blue Hero Banner ----------------
 
-st.markdown(
-    f"""
-    <div class="invoice-hero-banner">
-        <h1>Invoice Management 🧾</h1>
-        <p>
-            Manage customer invoices, track billing statuses,
-            and process payments from one place.
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
+render_hero(
+    "Invoice Management",
+    "Manage customer invoices, track billing statuses, and process payments from one place.",
+    icon="receipt_long",
 )
 
 
 # ---------------- Filters & Search Section ----------------
 
-with st.expander("🔍 Search & Filter Options", expanded=True):
+with st.expander("Search & Filter Options", expanded=True):
 
     col1, col2, col3 = st.columns(3)
 
@@ -247,17 +240,17 @@ overdue_count = sum(
 )
 
 m2.metric(
-    "🟢 Paid",
+    "Paid",
     paid_count
 )
 
 m3.metric(
-    "🟡 Pending",
+    "Pending",
     pending_count
 )
 
 m4.metric(
-    "🔴 Overdue",
+    "Overdue",
     overdue_count
 )
 
@@ -311,21 +304,21 @@ else:
 
         status_badges = {
 
-            "paid": "🟢 Paid",
+            "paid": "Paid",
 
-            "pending": "🟡 Pending",
+            "pending": "Pending",
 
-            "overdue": "🔴 Overdue",
+            "overdue": "Overdue",
 
-            "draft": "⚪ Draft",
+            "draft": "Draft",
 
-            "cancelled": "❌ Cancelled"
+            "cancelled": "Cancelled"
 
         }
 
         badge = status_badges.get(
             status,
-            f"⚪ {status}"
+            f"{status}"
         )
 
 
@@ -387,7 +380,7 @@ else:
             # ---------------- Invoice Details ----------------
 
             with st.expander(
-                "📄 View Full Invoice Details & Actions"
+                "View Full Invoice Details & Actions"
             ):
 
                 detail_resp = requests.get(
@@ -408,7 +401,7 @@ else:
                     with d_col1:
 
                         st.markdown(
-                            "#### 👤 Customer Information"
+                            "#### Customer Information"
                         )
 
                         cust = detail.get(
@@ -434,7 +427,7 @@ else:
                         # ---------------- Billing Dates ----------------
 
                         st.markdown(
-                            "#### 📅 Billing Period & Dates"
+                            "#### Billing Period & Dates"
                         )
 
                         p_start = detail.get(
@@ -470,7 +463,7 @@ else:
                     with d_col2:
 
                         st.markdown(
-                            "#### 📦 Subscription Information"
+                            "#### Subscription Information"
                         )
 
                         sub = detail.get(
@@ -502,7 +495,7 @@ else:
 
 
                         st.markdown(
-                            "#### 💰 Amount Summary"
+                            "#### Amount Summary"
                         )
 
                         st.write(
@@ -541,7 +534,7 @@ else:
                     if line_items:
 
                         st.markdown(
-                            "#### 📋 Line Items"
+                            "#### Line Items"
                         )
 
                         table_data = [
@@ -577,7 +570,7 @@ else:
                         ):
 
                             if st.button(
-                                "💳 Process Payment",
+                                "Process Payment", icon=":material/payments:",
                                 key=f"pay_btn_{inv_id}",
                                 use_container_width=True
                             ):
@@ -593,7 +586,7 @@ else:
                                     res = pay_resp.json()
 
                                     st.success(
-                                        f"✅ {res.get('message', 'Payment processed successfully!')}"
+                                        f"{res.get('message', 'Payment processed successfully!')}"
                                     )
 
                                     st.rerun()
@@ -617,14 +610,14 @@ else:
                                         )
 
                                     st.error(
-                                        f"❌ {err_detail}"
+                                        f"{err_detail}"
                                     )
 
 
                         elif status == "paid":
 
                             st.success(
-                                "✅ Invoice is fully paid."
+                                "Invoice is fully paid."
                             )
 
                         else:
@@ -653,7 +646,7 @@ with p_col1:
 
     if current_page > 1:
 
-        if st.button("⬅ Previous Page"):
+        if st.button("Previous Page", icon=":material/arrow_back:"):
 
             st.session_state["inv_page"] -= 1
 
@@ -673,7 +666,7 @@ with p_col3:
 
     if current_page < total_pages:
 
-        if st.button("Next Page ➡"):
+        if st.button("Next Page", icon=":material/arrow_forward:"):
 
             st.session_state["inv_page"] += 1
 

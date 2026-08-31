@@ -35,7 +35,7 @@ st.markdown(
     <style>
 
     [data-testid="stSidebar"]{
-        background:#0F172A;
+        background:#16231B;
     }
 
     [data-testid="stSidebar"] *{
@@ -43,7 +43,7 @@ st.markdown(
     }
 
     .banner{
-        background:linear-gradient(90deg,#2563EB,#1D4ED8);
+        background:linear-gradient(90deg,#2F6D4F,#1F4D38);
         padding:25px;
         border-radius:18px;
         color:white;
@@ -59,33 +59,36 @@ st.markdown(
 
 with st.sidebar:
 
-    st.markdown("# 💳 Billing Platform")
+    st.markdown("# Billing Platform")
     st.caption("Customer Dashboard")
     st.divider()
 
-    st.write(f"👤 **{user.get('username')}**")
-    st.write("👤 Customer")
+    st.write(f"**{user.get('username')}**")
+    st.write("Customer")
 
     st.divider()
 
-    if st.button("🏠 Dashboard", use_container_width=True):
+    if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
         st.switch_page("pages/CustomerDashboard.py")
 
-    if st.button("📦 Available Plans", use_container_width=True):
+    if st.button("Available Plans", icon=":material/inventory_2:", use_container_width=True):
         st.switch_page("pages/Plans.py")
 
-    if st.button("🔄 My Subscription", use_container_width=True):
+    if st.button("My Subscription", icon=":material/autorenew:", use_container_width=True):
         st.rerun()
 
-    if st.button("🧾 My Invoices", use_container_width=True):
+    if st.button("My Invoices", icon=":material/receipt_long:", use_container_width=True):
         st.switch_page("pages/MyInvoices.py")
 
-    if st.button("👤 My Profile", use_container_width=True):
+    if st.button("My Profile", icon=":material/person:", use_container_width=True):
         st.switch_page("pages/Profile.py")
+
+    if st.button("Notifications", icon=":material/notifications:", use_container_width=True):
+        st.switch_page("pages/Notifications.py")
 
     st.divider()
 
-    if st.button("🚪 Logout", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
         logout()
         st.switch_page("app.py")
 
@@ -94,7 +97,7 @@ with st.sidebar:
 st.markdown(
     """
     <div class="banner">
-    <h2>🔄 My Subscription</h2>
+    <h2>My Subscription</h2>
     Manage your active plan, renew, or cancel.
     </div>
     """,
@@ -123,7 +126,7 @@ if sub_resp.status_code == 404:
 
     st.info("You don't have a subscription yet.")
 
-    if st.button("📦 Browse Available Plans", type="primary"):
+    if st.button("Browse Available Plans", icon=":material/inventory_2:", type="primary"):
         st.switch_page("pages/Plans.py")
 
     st.stop()
@@ -151,10 +154,10 @@ if plan_resp.status_code == 200:
 status = subscription.get("status", "unknown")
 
 status_badges = {
-    "active": "🟢 Active",
-    "cancelled": "🔴 Cancelled",
-    "expired": "⚪ Expired",
-    "blocked": "🚫 Blocked",
+    "active": "Active",
+    "cancelled": "Cancelled",
+    "expired": "Expired",
+    "blocked": "Blocked",
 }
 
 badge = status_badges.get(status, status)
@@ -164,16 +167,16 @@ with st.container(border=True):
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        st.metric("📦 Plan", plan.get("name", f"Plan #{subscription['plan_id']}"))
+        st.metric("Plan", plan.get("name", f"Plan #{subscription['plan_id']}"))
 
     with c2:
-        st.metric("🔄 Status", badge)
+        st.metric("Status", badge)
 
     with c3:
-        st.metric("📅 Renews / Ends", fmt_date(subscription.get("current_period_end")))
+        st.metric("Renews / Ends", fmt_date(subscription.get("current_period_end")))
 
     with c4:
-        st.metric("💰 Price", f"${float(plan.get('price', 0)):.2f}" if plan else "N/A")
+        st.metric("Price", f"${float(plan.get('price', 0)):.2f}" if plan else "N/A")
 
     st.write(f"**Started:** {fmt_date(subscription.get('current_period_start'))}")
 
@@ -184,7 +187,7 @@ st.divider()
 
 # ---------------- Actions ----------------
 
-st.subheader("⚡ Manage Subscription")
+st.subheader("Manage Subscription")
 
 a1, a2, a3 = st.columns(3)
 
@@ -192,7 +195,7 @@ with a1:
 
     if status == "active":
 
-        if st.button("❌ Cancel Subscription", use_container_width=True):
+        if st.button("Cancel Subscription", icon=":material/cancel:", use_container_width=True):
 
             resp = requests.post(
                 f"{API_URL}/subscriptions/{subscription['id']}/cancel",
@@ -212,7 +215,7 @@ with a2:
 
     if status in ("expired", "cancelled"):
 
-        if st.button("🔁 Renew Subscription", use_container_width=True):
+        if st.button("Renew Subscription", icon=":material/autorenew:", use_container_width=True):
 
             resp = requests.post(
                 f"{API_URL}/subscriptions/{subscription['id']}/renew",
@@ -230,7 +233,7 @@ with a2:
 
 with a3:
 
-    if st.button("🧾 View My Invoices", use_container_width=True):
+    if st.button("View My Invoices", icon=":material/receipt_long:", use_container_width=True):
         st.switch_page("pages/MyInvoices.py")
 
 if status == "active":

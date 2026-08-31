@@ -3,7 +3,7 @@ import streamlit as st
 from config import API_URL
 from utils import get_headers
 from auth import logout
-from styles import load_css
+from styles import load_css, render_hero
 
 
 def format_api_error(response, fallback="Something went wrong."):
@@ -57,7 +57,7 @@ st.markdown(
     <style>
 
     .invoice-hero-banner {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        background: linear-gradient(135deg, #2F6D4F, #1F4D38);
         padding: 35px 40px;
         border-radius: 18px;
         margin-bottom: 30px;
@@ -72,7 +72,7 @@ st.markdown(
     }
 
     .invoice-hero-banner p {
-        color: #e0ecff;
+        color: #E4EFE7;
         font-size: 17px;
         margin: 0;
     }
@@ -94,57 +94,50 @@ with st.sidebar:
 
     if user.get("role") == "admin":
 
-        if st.button("🏠 Dashboard", use_container_width=True):
+        if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
             st.switch_page("pages/AdminDashboard.py")
 
-        if st.button("👥 Customers", use_container_width=True):
+        if st.button("Customers", icon=":material/group:", use_container_width=True):
             st.switch_page("pages/Customers.py")
 
-        if st.button("📦 Plans", use_container_width=True):
+        if st.button("Plans", icon=":material/inventory_2:", use_container_width=True):
             st.rerun()
 
-        if st.button("🧾 Invoices", use_container_width=True):
+        if st.button("Invoices", icon=":material/receipt_long:", use_container_width=True):
             st.switch_page("pages/Invoices.py")
 
-        if st.button("👤 Profile", use_container_width=True):
+        if st.button("Profile", icon=":material/person:", use_container_width=True):
             st.switch_page("pages/Profile.py")
 
     else:
 
-        if st.button("🏠 Dashboard", use_container_width=True):
+        if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
             st.switch_page("pages/CustomerDashboard.py")
 
-        if st.button("📦 Plans", use_container_width=True):
+        if st.button("Plans", icon=":material/inventory_2:", use_container_width=True):
             st.rerun()
 
-        if st.button("🔄 My Subscription", use_container_width=True):
+        if st.button("My Subscription", icon=":material/autorenew:", use_container_width=True):
             st.switch_page("pages/Subscriptions.py")
 
-        if st.button("🧾 My Invoices", use_container_width=True):
+        if st.button("My Invoices", icon=":material/receipt_long:", use_container_width=True):
             st.switch_page("pages/MyInvoices.py")
 
-        if st.button("👤 Profile", use_container_width=True):
+        if st.button("Profile", icon=":material/person:", use_container_width=True):
             st.switch_page("pages/Profile.py")
 
     st.divider()
 
-    if st.button("Logout", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
         logout()
         st.switch_page("app.py")
 
 # ---------------- Hero Banner ----------------
 
-st.markdown(
-    """
-    <div class="invoice-hero-banner">
-        <h1>Plan Management 📦</h1>
-        <p>
-            Create, manage, and explore subscription plans
-            for your customers from one place.
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
+render_hero(
+    "Plan Management",
+    "Create, manage, and explore subscription plans for your customers from one place.",
+    icon="inventory_2",
 )
 
 # ==========================================================
@@ -153,7 +146,7 @@ st.markdown(
 
 if user["role"] == "admin":
 
-    st.subheader("➕ Add New Plan")
+    st.subheader("Add New Plan")
 
     with st.container(border=True):
         with st.form("create_plan_form"):
@@ -184,7 +177,7 @@ if user["role"] == "admin":
                 )
 
             submitted = st.form_submit_button(
-                "➕ Create Plan",
+                "Create Plan",
                 use_container_width=True
             )
 
@@ -213,7 +206,7 @@ if user["role"] == "admin":
 
                     if response.status_code == 200:
                         st.success(
-                            "✅ Plan created successfully."
+                            "Plan created successfully."
                         )
                         st.rerun()
 
@@ -272,7 +265,7 @@ for plan in plans:
 
         with col1:
             st.subheader(
-                f"📦 {plan['name']}"
+                f"{plan['name']}"
             )
 
             st.caption(
@@ -305,9 +298,9 @@ for plan in plans:
         # ---------------- Status ----------------
 
         status_text = (
-            "🟢 Active"
+            "Active"
             if plan["status"] == "active"
-            else "🔴 Inactive"
+            else "Inactive"
         )
 
         st.write(
@@ -324,7 +317,7 @@ for plan in plans:
 
                 # ---------------- Edit Plan ----------------
 
-                with st.expander("✏️ Edit Plan"):
+                with st.expander("️ Edit Plan"):
 
                     new_name = st.text_input(
                         "Plan Name",
@@ -365,7 +358,7 @@ for plan in plans:
                     )
 
                     if st.button(
-                        "💾 Update Plan",
+                        "Update Plan", icon=":material/save:",
                         key=f"update_{plan['id']}",
                         use_container_width=True
                     ):
@@ -386,7 +379,7 @@ for plan in plans:
 
                         if response.status_code == 200:
                             st.success(
-                                "✅ Plan updated successfully."
+                                "Plan updated successfully."
                             )
                             st.rerun()
 
@@ -407,7 +400,7 @@ for plan in plans:
                 if not st.session_state[confirm_key]:
 
                     if st.button(
-                        "🗑️ Deactivate Plan",
+                        "️ Deactivate Plan", icon=":material/block:",
                         key=f"delete_{plan['id']}",
                         use_container_width=True
                     ):
@@ -425,7 +418,7 @@ for plan in plans:
                     with col_yes:
 
                         if st.button(
-                            "✅ Yes",
+                            "Yes", icon=":material/check:",
                             key=f"yes_{plan['id']}",
                             use_container_width=True
                         ):
@@ -450,7 +443,7 @@ for plan in plans:
                     with col_no:
 
                         if st.button(
-                            "❌ Cancel",
+                            "Cancel", icon=":material/cancel:",
                             key=f"cancel_{plan['id']}",
                             use_container_width=True
                         ):
@@ -465,7 +458,7 @@ for plan in plans:
 
                 # ---------------- Edit Inactive Plan ----------------
 
-                with st.expander("✏️ Edit Plan"):
+                with st.expander("️ Edit Plan"):
 
                     new_name = st.text_input(
                         "Plan Name",
@@ -502,7 +495,7 @@ for plan in plans:
                     )
 
                     if st.button(
-                        "💾 Update Plan",
+                        "Update Plan", icon=":material/save:",
                         key=f"update_inactive_{plan['id']}",
                         use_container_width=True
                     ):
@@ -523,7 +516,7 @@ for plan in plans:
 
                         if response.status_code == 200:
                             st.success(
-                                "✅ Plan updated successfully."
+                                "Plan updated successfully."
                             )
                             st.rerun()
 
@@ -535,7 +528,7 @@ for plan in plans:
                 # ---------------- Reactivate Plan ----------------
 
                 if st.button(
-                    "🔁 Reactivate Plan",
+                    "Reactivate Plan", icon=":material/restart_alt:",
                     key=f"reactivate_{plan['id']}",
                     use_container_width=True,
                     type="primary",
@@ -556,7 +549,7 @@ for plan in plans:
                     )
 
                     if response.status_code == 200:
-                        st.success("✅ Plan reactivated successfully.")
+                        st.success("Plan reactivated successfully.")
                         st.rerun()
                     else:
                         st.error(
@@ -576,7 +569,7 @@ for plan in plans:
                 with sub_col1:
 
                     if st.button(
-                        "✅ Subscribe Now",
+                        "Subscribe Now", icon=":material/check_circle:",
                         key=f"subscribe_{plan['id']}",
                         use_container_width=True,
                         type="primary",
@@ -591,11 +584,11 @@ for plan in plans:
                         if sub_response.status_code == 200:
                             st.session_state["last_subscribed_plan"] = plan["name"]
                             st.success(
-                                f"🎉 Subscribed to **{plan['name']}**! "
+                                f"Subscribed to **{plan['name']}**! "
                                 "An invoice has been generated automatically."
                             )
                             if st.button(
-                                "🧾 View My Invoice",
+                                "View My Invoice", icon=":material/receipt_long:",
                                 key=f"view_invoice_{plan['id']}",
                             ):
                                 st.switch_page("pages/MyInvoices.py")
@@ -610,7 +603,7 @@ for plan in plans:
                                 )
 
                 with st.expander(
-                    "📄 View Plan Details"
+                    "View Plan Details"
                 ):
 
                     detail_response = requests.get(
@@ -623,9 +616,9 @@ for plan in plans:
                         detail = detail_response.json()
 
                         status = (
-                            "🟢 Active"
+                            "Active"
                             if detail["status"] == "active"
-                            else "🔴 Inactive"
+                            else "Inactive"
                         )
 
                         col1, col2 = st.columns(2)
@@ -633,7 +626,7 @@ for plan in plans:
                         with col1:
 
                             st.markdown(
-                                "#### 📦 Plan Information"
+                                "#### Plan Information"
                             )
 
                             st.write(
@@ -649,7 +642,7 @@ for plan in plans:
                         with col2:
 
                             st.markdown(
-                                "#### 💰 Pricing"
+                                "#### Pricing"
                             )
 
                             st.write(

@@ -5,7 +5,7 @@ from PIL import Image
 from streamlit_cropper import st_cropper
 
 from auth import logout
-from styles import load_css
+from styles import load_css, render_hero
 
 import requests
 from config import API_URL
@@ -51,7 +51,7 @@ st.markdown(
     <style>
 
     .hero-banner {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        background: linear-gradient(135deg, #2F6D4F, #1F4D38);
         padding: 35px 40px;
         border-radius: 18px;
         margin-bottom: 30px;
@@ -66,7 +66,7 @@ st.markdown(
     }
 
     .hero-content p {
-        color: #e0ecff;
+        color: #E4EFE7;
         font-size: 17px;
         margin: 0;
     }
@@ -83,7 +83,7 @@ st.markdown(
 
 with st.sidebar:
 
-    st.markdown("# 💳 Billing Platform")
+    st.markdown("# Billing Platform")
 
     if user["role"] == "admin":
         st.caption("Admin Profile")
@@ -92,12 +92,12 @@ with st.sidebar:
 
     st.divider()
 
-    st.write(f"👤 **{user['username']}**")
+    st.write(f"**{user['username']}**")
 
     if user["role"] == "admin":
-        st.write("🛡 Administrator")
+        st.write("Administrator")
     else:
-        st.write("👥 Customer")
+        st.write("Customer")
 
     st.divider()
 
@@ -109,7 +109,7 @@ with st.sidebar:
     if user["role"] == "admin":
 
         if st.button(
-            "🏠 Dashboard",
+            "Dashboard", icon=":material/dashboard:",
             use_container_width=True
         ):
             st.switch_page(
@@ -117,7 +117,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "👥 Customers",
+            "Customers", icon=":material/group:",
             use_container_width=True
         ):
             st.switch_page(
@@ -125,7 +125,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "📦 Plans",
+            "Plans", icon=":material/inventory_2:",
             use_container_width=True
         ):
             st.switch_page(
@@ -133,7 +133,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "🧾 Invoices",
+            "Invoices", icon=":material/receipt_long:",
             use_container_width=True
         ):
             st.switch_page(
@@ -141,7 +141,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "👤 Profile",
+            "Profile", icon=":material/person:",
             use_container_width=True
         ):
             st.rerun()
@@ -154,7 +154,7 @@ with st.sidebar:
     else:
 
         if st.button(
-            "🏠 Dashboard",
+            "Dashboard", icon=":material/dashboard:",
             use_container_width=True
         ):
             st.switch_page(
@@ -162,7 +162,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "📦 Plans",
+            "Plans", icon=":material/inventory_2:",
             use_container_width=True
         ):
             st.switch_page(
@@ -170,7 +170,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "🔄 My Subscription",
+            "My Subscription", icon=":material/autorenew:",
             use_container_width=True
         ):
             st.switch_page(
@@ -178,7 +178,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "🧾 My Invoices",
+            "My Invoices", icon=":material/receipt_long:",
             use_container_width=True
         ):
             st.switch_page(
@@ -186,7 +186,7 @@ with st.sidebar:
             )
 
         if st.button(
-            "👤 Profile",
+            "Profile", icon=":material/person:",
             use_container_width=True
         ):
             st.rerun()
@@ -200,7 +200,7 @@ with st.sidebar:
     # ------------------------------------------------------
 
     if st.button(
-        "🚪 Logout",
+        "Logout", icon=":material/logout:",
         use_container_width=True
     ):
         logout()
@@ -227,16 +227,10 @@ else:
     )
 
 
-st.markdown(
-    f"""
-    <div class="hero-banner">
-        <div class="hero-content">
-            <h1>My Profile 👤</h1>
-            <p>{description}</p>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
+render_hero(
+    "My Profile",
+    description,
+    icon="person",
 )
 
 
@@ -244,7 +238,7 @@ st.markdown(
 # Account Information
 # ==========================================================
 
-st.subheader("👤 Account Information")
+st.subheader("Account Information")
 
 
 with st.container(border=True):
@@ -294,8 +288,8 @@ with st.container(border=True):
                     border-radius:50%;
                     background:linear-gradient(
                         135deg,
-                        #2563eb,
-                        #1d4ed8
+                        #2F6D4F,
+                        #1F4D38
                     );
                     display:flex;
                     align-items:center;
@@ -316,17 +310,17 @@ with st.container(border=True):
         )
 
         if user["role"] == "admin":
-            st.info("🛡 Administrator")
+            st.info("Administrator")
         else:
-            st.info("👤 Customer")
+            st.info("Customer")
 
-with st.expander("📷 Change Profile Picture"):
+with st.expander("Change Profile Picture"):
 
     # ------------------------------------------------------
     # Show success message after upload
     # ------------------------------------------------------
     if st.session_state.get("profile_picture_updated"):
-        st.success("✅ Profile picture uploaded successfully.")
+        st.success("Profile picture uploaded successfully.")
 
         # Clear the flag after displaying the message
         st.session_state["profile_picture_updated"] = False
@@ -351,7 +345,7 @@ with st.expander("📷 Change Profile Picture"):
                 cropped_image = st_cropper(
                     image,
                     aspect_ratio=(1, 1),
-                    box_color="#2563eb",
+                    box_color="#2F6D4F",
                     realtime_update=True,
                     key="profile_pic_cropper",
                 )
@@ -367,7 +361,7 @@ with st.expander("📷 Change Profile Picture"):
                     )
 
                 if st.button(
-                    "Upload",
+                    "Upload", icon=":material/upload:",
                     key="upload_pic_btn",
                     use_container_width=True,
                 ):
@@ -437,14 +431,14 @@ with st.expander("📷 Change Profile Picture"):
   
 with col2:
 
-    st.markdown("### 📋 Personal Information")
+    st.markdown("### Personal Information")
 
     with st.container(border=True):
 
         r1, r2 = st.columns([1, 3])
 
         with r1:
-            st.write("👤 **Username**")
+            st.write("**Username**")
 
         with r2:
             st.write(
@@ -456,7 +450,7 @@ with col2:
         r1, r2 = st.columns([1, 3])
 
         with r1:
-            st.write("✉️ **Email**")
+            st.write("️ **Email**")
 
         with r2:
             st.write(
@@ -465,7 +459,7 @@ with col2:
 
         st.divider()
 
-        with st.expander("✏️ Edit Username"):
+        with st.expander("️ Edit Username"):
 
             with st.form("edit_username_form"):
 
@@ -505,7 +499,7 @@ with col2:
         info_col1, info_col2 = st.columns([1, 3])
 
         with info_col1:
-            st.write("🛡️")
+            st.write("️")
 
         with info_col2:
             st.caption("ACCOUNT ROLE")
@@ -521,7 +515,7 @@ with col2:
 
 st.divider()
 
-st.subheader("🔐 Account Status")
+st.subheader("Account Status")
 
 
 status1, status2, status3 = st.columns(3)
@@ -530,14 +524,14 @@ status1, status2, status3 = st.columns(3)
 with status1:
 
     st.success(
-        "✅ Account Active"
+        "Account Active"
     )
 
 
 with status2:
 
     st.success(
-        "🔒 Authentication Enabled"
+        "Authentication Enabled"
     )
 
 
@@ -546,13 +540,13 @@ with status3:
     if user["role"] == "admin":
 
         st.info(
-            "🛡 Admin Access"
+            "Admin Access"
         )
 
     else:
 
         st.info(
-            "👥 Customer Access"
+            "Customer Access"
         )
 
 
@@ -562,7 +556,7 @@ with status3:
 
 st.divider()
 
-st.subheader("⚡ Quick Actions")
+st.subheader("Quick Actions")
 
 
 action1, action2, action3 = st.columns(3)
@@ -575,7 +569,7 @@ action1, action2, action3 = st.columns(3)
 with action1:
 
     if st.button(
-        "🏠 Back to Dashboard",
+        "Back to Dashboard", icon=":material/arrow_back:",
         use_container_width=True,
         type="primary"
     ):
@@ -602,7 +596,7 @@ with action2:
     if user["role"] == "admin":
 
         if st.button(
-            "👥 Manage Customers",
+            "Manage Customers", icon=":material/group:",
             use_container_width=True
         ):
 
@@ -613,7 +607,7 @@ with action2:
     else:
 
         if st.button(
-            "📦 Explore Plans",
+            "Explore Plans", icon=":material/inventory_2:",
             use_container_width=True
         ):
 
@@ -629,7 +623,7 @@ with action2:
 with action3:
 
     if st.button(
-        "🚪 Logout",
+        "Logout", icon=":material/logout:",
         use_container_width=True
     ):
 

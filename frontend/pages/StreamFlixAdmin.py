@@ -22,7 +22,7 @@ st.set_page_config(page_title="StreamFlix Analytics", layout="wide")
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"]{ background:#0F172A; }
+    [data-testid="stSidebar"]{ background:#16231B; }
     [data-testid="stSidebar"] *{ color:white; }
     </style>
     """,
@@ -33,15 +33,15 @@ with st.sidebar:
     st.markdown("# Billing Platform")
     st.caption("Admin Dashboard")
     st.divider()
-    if st.button("Dashboard", use_container_width=True):
+    if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
         st.switch_page("pages/AdminDashboard.py")
-    if st.button("Billing Calendar", use_container_width=True):
+    if st.button("Billing Calendar", icon=":material/calendar_month:", use_container_width=True):
         st.switch_page("pages/BillingCalendar.py")
     
-    if st.button("StreamFlix Analytics", use_container_width=True):
+    if st.button("StreamFlix Analytics", icon=":material/bar_chart:", use_container_width=True):
         st.rerun()
     st.divider()
-    if st.button("Logout", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
         logout()
         st.switch_page("app.py")
 

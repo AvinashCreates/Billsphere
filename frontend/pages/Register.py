@@ -1,7 +1,9 @@
 import streamlit as st
 import requests
 from config import API_URL
-from styles import load_css 
+from styles import load_css
+
+
 
 # ---------------- Page Config ----------------
 
@@ -11,13 +13,15 @@ st.set_page_config(
     layout="centered"
 )
 
+load_css()
+
 # ---------------- Custom CSS ----------------
-load_css()   
+
 st.markdown("""
 <style>
 
 .welcome-box{
-    background: linear-gradient(135deg,#2563EB,#1E40AF);
+    background: linear-gradient(135deg,#2F6D4F,#1F4D38);
     color: white;
     padding: 32px 28px;
     border-radius: 18px;
@@ -65,7 +69,7 @@ st.markdown("""
 
 with st.container(border=True):
 
-    st.subheader("📝 Create Account")
+    st.subheader("Create Account")
     st.caption("Fill in your details to get started.")
 
     username = st.text_input(
@@ -84,7 +88,7 @@ with st.container(border=True):
         placeholder="Create a password"
     )
 
-    if st.button("Create Account", use_container_width=True):
+    if st.button("Create Account", icon=":material/person_add:", use_container_width=True):
 
         if not username or not email or not password:
             st.warning("Please fill in all fields.")
@@ -101,7 +105,7 @@ with st.container(border=True):
             )
 
             if response.status_code == 200:
-                st.success("🎉 Registration successful! Please sign in.")
+                st.success("Registration successful! Please sign in.")
                 st.switch_page("pages/Login.py")
 
             else:
@@ -117,7 +121,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-if st.button("🔑 Sign In", use_container_width=True):
+if st.button("Sign In", icon=":material/login:", use_container_width=True):
     st.switch_page("pages/Login.py")
 
 st.caption("© 2026 Billing Platform")

@@ -1,5 +1,6 @@
 import streamlit as st
-from styles import load_css 
+
+from styles import load_css, render_hero
 
 # ---------------- Redirect if already logged in ----------------
 if "token" in st.session_state:
@@ -21,126 +22,57 @@ st.set_page_config(
 
 load_css()
 
-# Hide Streamlit's default sidebar only on this page
+# Hide Streamlit's default sidebar only on this page (landing page has no
+# app sidebar at all -- load_css() only hides the auto-generated page nav,
+# this hides the sidebar shell entirely, which is specific to this page).
 st.markdown("""
 <style>
-
-/* Hide the entire sidebar */
-[data-testid="stSidebar"] {
-    display: none;
-}
-
-/* Hide the sidebar toggle button */
-[data-testid="collapsedControl"] {
-    display: none;
-}
-
-/* Hide the default page navigation */
-[data-testid="stSidebarNav"] {
-    display: none;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ---------------- Hide Default Streamlit Navigation ----------------
-st.markdown("""
-<style>
-
-/* Hide Streamlit multipage menu */
-[data-testid="stSidebarNav"]{
-    display:none;
-}
-
-[data-testid="stSidebarHeader"]{
-    display:none;
-}
-
-/* Hero Banner */
-.hero{
-    background: linear-gradient(135deg,#2563EB,#1E40AF);
-    padding:45px;
-    border-radius:18px;
-    text-align:center;
-    color:white;
-    margin-bottom:25px;
-    
-}
-
-/* Feature Cards */
-.feature{
-    background:#F8FAFC;
-    border:1px solid #E5E7EB;
-    border-radius:12px;
-    padding:18px;
-    text-align:center;
-    font-size:16px;
-    font-weight:600;
-}
-
-/* Buttons */
-.stButton>button{
-    border-radius:10px;
-    height:50px;
-    font-size:16px;
-    font-weight:bold;
-}
-
+[data-testid="stSidebar"] { display: none; }
+[data-testid="collapsedControl"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------- Hero Section ----------------
-st.markdown("""
-<div class="hero">
-
-<h1>💳 Billing Platform</h1>
-
-<h4>Simple. Secure. Smart Billing.</h4>
-
-
-</div>
-""", unsafe_allow_html=True)
+render_hero(
+    "Billing Platform",
+    "Simple. Secure. Smart billing for recurring subscriptions.",
+    icon="account_balance",
+)
 
 # ---------------- Action Buttons ----------------
-
-st.markdown("<br>", unsafe_allow_html=True)
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("🔑 Sign In", use_container_width=True):
+    if st.button("Sign In", icon=":material/login:", use_container_width=True):
         st.switch_page("pages/Login.py")
 
 with col2:
-    if st.button("📝 Create Account", use_container_width=True):
+    if st.button("Create Account", icon=":material/person_add:", use_container_width=True):
         st.switch_page("pages/Register.py")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ----------festures------------
-
-
-st.subheader("✨ Features")
+# ---------------- Features ----------------
+st.subheader(":material/star: Features")
 
 col1, col2 = st.columns(2)
 
 with col1:
     with st.container(border=True):
-        st.markdown("### 🔐 Secure Authentication")
+        st.markdown("#### :material/lock: Secure Authentication")
         st.caption("JWT-based secure login and role-based access.")
 
     with st.container(border=True):
-        st.markdown("### 👥 Customer Management")
+        st.markdown("#### :material/group: Customer Management")
         st.caption("Manage customer accounts efficiently.")
 
 with col2:
     with st.container(border=True):
-        st.markdown("### 📦 Subscription Management")
+        st.markdown("#### :material/inventory_2: Subscription Management")
         st.caption("Create and manage subscription plans.")
 
     with st.container(border=True):
-        st.markdown("### 🧾 Invoice Management")
+        st.markdown("#### :material/receipt_long: Invoice Management")
         st.caption("Generate and track customer invoices.")
 
-
-
-st.caption("© 2026 Billing Platform • Secure Subscription & Invoice Management")
+st.caption("© 2026 Billing Platform · Secure Subscription & Invoice Management")

@@ -3,7 +3,8 @@ import streamlit as st
 
 from config import API_URL
 from utils import get_headers
-from styles import load_css 
+from styles import load_css
+from auth import logout
 
 # ---------------- Authentication ----------------
 
@@ -19,51 +20,49 @@ user = st.session_state["user"]
 
 st.set_page_config(page_title="Notifications", page_icon="🔔", layout="wide")
 
+load_css()
+# ---------------- Sidebar ----------------
+
+with st.sidebar:
+
+    st.markdown("# Billing Platform")
+    st.caption("Customer Dashboard")
+    st.divider()
+
+    st.write(f"**{user.get('username')}**")
+    st.write("Customer")
+
+    st.divider()
+
+    if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
+        st.switch_page("pages/CustomerDashboard.py")
+
+    if st.button("Available Plans", icon=":material/inventory_2:", use_container_width=True):
+        st.switch_page("pages/Plans.py")
+
+    if st.button("My Subscription", icon=":material/autorenew:", use_container_width=True):
+        st.switch_page("pages/Subscriptions.py")
+
+    if st.button("My Invoices", icon=":material/receipt_long:", use_container_width=True):
+        st.switch_page("pages/MyInvoices.py")
+        
+
+    if st.button("My Profile", icon=":material/person:", use_container_width=True):
+        st.switch_page("pages/Profile.py")
+
+    if st.button("Notifications", icon=":material/notifications:", use_container_width=True):
+            st.rerun()
+    
+
+    st.divider()
+
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
+        logout()
+        st.switch_page("app.py")
+
 # ---------------- Styling ----------------
-load_css()  
-st.markdown(
-    """
-    <style>
 
-    .notif-header {
-        margin-bottom: 4px;
-    }
 
-    .notif-subtext {
-        color: #6b7280;
-        font-size: 15px;
-        margin-bottom: 24px;
-    }
-
-    .notif-type-badge {
-        display: inline-block;
-        padding: 2px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-        background: #eef2ff;
-        color: #4338ca;
-    }
-
-    .notif-status-sent { color: #059669; font-weight: 600; font-size: 13px; }
-    .notif-status-pending { color: #b45309; font-weight: 600; font-size: 13px; }
-    .notif-status-failed { color: #dc2626; font-weight: 600; font-size: 13px; }
-
-    .notif-unread-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #2563eb;
-        margin-right: 8px;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 st.markdown("<h1 class='notif-header'>Notifications</h1>", unsafe_allow_html=True)
 st.markdown(
@@ -133,11 +132,11 @@ if user["role"] == "admin":
 col_refresh, col_mark_all = st.columns([1, 1])
 
 with col_refresh:
-    if st.button("Refresh", use_container_width=True):
+    if st.button("Refresh", icon=":material/refresh:", use_container_width=True):
         st.rerun()
 
 with col_mark_all:
-    if not view_all and st.button("Mark all as read", use_container_width=True):
+    if not view_all and st.button("Mark all as read", icon=":material/done_all:", use_container_width=True):
         mark_resp = requests.post(
             f"{API_URL}/notifications/read-all",
             headers=get_headers(),
@@ -210,7 +209,7 @@ for note in notifications:
 
         with col3:
             if not view_all and not note_is_read and note_id is not None:
-                if st.button("Mark read", key=f"read_{note_id}"):
+                if st.button("Mark read", icon=":material/check:", key=f"read_{note_id}"):
                     requests.post(
                         f"{API_URL}/notifications/{note_id}/read",
                         headers=get_headers(),
@@ -219,7 +218,7 @@ for note in notifications:
 
 st.divider()
 
-if st.button("Back"):
+if st.button("Back", icon=":material/arrow_back:"):
     if user["role"] == "admin":
         st.switch_page("pages/AdminDashboard.py")
     else:

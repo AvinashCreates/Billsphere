@@ -24,7 +24,7 @@ st.set_page_config(page_title="Billing Calendar", layout="wide")
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"]{ background:#0F172A; }
+    [data-testid="stSidebar"]{ background:#16231B; }
     [data-testid="stSidebar"] *{ color:white; }
     </style>
     """,
@@ -35,22 +35,22 @@ with st.sidebar:
     st.markdown("# Billing Platform")
     st.caption("Admin Dashboard")
     st.divider()
-    if st.button("Dashboard", use_container_width=True):
+    if st.button("Dashboard", icon=":material/dashboard:", use_container_width=True):
         st.switch_page("pages/AdminDashboard.py")
-    if st.button("Customers", use_container_width=True):
+    if st.button("Customers", icon=":material/group:", use_container_width=True):
         st.switch_page("pages/Customers.py")
-    if st.button("Plans", use_container_width=True):
+    if st.button("Plans", icon=":material/inventory_2:", use_container_width=True):
         st.switch_page("pages/Plans.py")
-    if st.button("Invoices", use_container_width=True):
+    if st.button("Invoices", icon=":material/receipt_long:", use_container_width=True):
         st.switch_page("pages/Invoices.py")
-    if st.button("Notifications", use_container_width=True):
+    if st.button("Notifications", icon=":material/notifications:", use_container_width=True):
         st.switch_page("pages/Notifications.py")
-    if st.button("Billing Calendar", use_container_width=True):
+    if st.button("Billing Calendar", icon=":material/calendar_month:", use_container_width=True):
         st.rerun()
-    if st.button("Profile", use_container_width=True):
+    if st.button("Profile", icon=":material/person:", use_container_width=True):
         st.switch_page("pages/Profile.py")
     st.divider()
-    if st.button("Logout", use_container_width=True):
+    if st.button("Logout", icon=":material/logout:", use_container_width=True):
         logout()
         st.switch_page("app.py")
 
