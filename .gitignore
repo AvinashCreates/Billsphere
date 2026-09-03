@@ -1,6 +1,7 @@
 # Virtual Environment
 venv/
 .venv/
+env/
 
 # Python
 __pycache__/
@@ -9,6 +10,13 @@ __pycache__/
 
 # Environment Variables
 .env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+build/
 
 # IDE
 .vscode/
@@ -17,17 +25,37 @@ __pycache__/
 # Streamlit Cache
 .streamlit/
 
-# Logs
-*.log
-
 # OS Files
 Thumbs.db
 .DS_Store
 
+# Logs
+*.log
+
 # Pytest
 .pytest_cache/
 
+# Python cache/tools
+.mypy_cache/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Coverage
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Celery runtime files
+backend/celerybeat-schedule.*
+
 # User uploaded profile pictures
 uploads/profile_pictures/
-
 uploads
+
+# Everything is gonna be Ok

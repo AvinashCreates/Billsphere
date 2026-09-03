@@ -32,6 +32,7 @@ from app.core.scheduler import (
     start_scheduler,
     stop_scheduler,
 )
+from app.middleware.auth import AuthenticationMiddleware
 
 
 # ==========================================================
@@ -175,6 +176,8 @@ allowed_origins = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
 ]
 
 try:
@@ -189,6 +192,8 @@ except Exception as exc:
     app_logger.warning(
         f"Could not load configured CORS origins: {exc}"
     )
+
+app.add_middleware(AuthenticationMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

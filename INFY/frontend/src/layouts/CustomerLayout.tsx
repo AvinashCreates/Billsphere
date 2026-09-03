@@ -88,7 +88,7 @@ function CustomerLayout() {
           TOP NAVBAR
       ===================================================== */}
 
-      <header className="fixed inset-x-0 top-0 z-50 h-[72px] border-b border-white/[0.06] bg-[#090909]/95 backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-50 h-[65px] border-b border-white/[0.06] bg-[#090909]/95 backdrop-blur-xl">
 
         <div className="flex h-full items-center justify-between px-5 lg:px-7">
 
@@ -193,7 +193,7 @@ function CustomerLayout() {
           DESKTOP SIDEBAR
       ===================================================== */}
 
-      <aside className="fixed bottom-0 left-0 top-[72px] z-40 hidden w-[235px] border-r border-white/[0.06] bg-[#0A0A0A] lg:block">
+      <aside className="fixed bottom-0 left-0 top-[65px] z-40 hidden w-[212px] border-r border-white/[0.06] bg-[#0A0A0A] lg:block">
 
         <CustomerSidebar />
 
@@ -214,7 +214,7 @@ function CustomerLayout() {
 
           <aside className="absolute bottom-0 left-0 top-0 w-[280px] border-r border-white/10 bg-[#0A0A0A]">
 
-            <div className="flex h-[72px] items-center justify-between border-b border-white/[0.06] px-5">
+            <div className="flex h-[65px] items-center justify-between border-b border-white/[0.06] px-5">
 
               <div>
 
@@ -252,7 +252,7 @@ function CustomerLayout() {
           CUSTOMER CONTENT
       ===================================================== */}
 
-      <main className="ml-0 min-h-screen pt-[72px] lg:ml-[235px]">
+      <main className="ml-0 min-h-screen pt-[65px] lg:ml-[212px]">
 
         <div className="w-full px-5 py-7 md:px-8 lg:px-10">
 

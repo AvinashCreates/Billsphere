@@ -307,3 +307,46 @@ The latest migration adds compatibility for:
 ## Milestone status
 
 Backend implementation is structured around the supplied 8-week project specification. The React dashboard can consume the analytics, invoice, payment-retry, audit, report and billing-cycle APIs directly.
+
+
+The issue is exactly what you suspected: the environment was still resolving to a stale Python 3.14 path. I’m switching the app and startup commands to the confirmed Python 3.12 venv so the runtime is stable and the server can start without the false import errors.
+
+No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
+If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
+Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
+
+## ✅ Python 3.12 is the correct runtime
+
+You were right: there was no Python 3.14 on this machine, and the stale resolution was the issue. I did not find any project file hard-coded to Python 3.14, so no repo code changes were needed.
+
+I verified the actual project environment works with the Python 3.12 venv:
+
+- Verified command: `& "C:\Users\pc\Desktop\INfY\INFY\backend\.venv\Scripts\python.exe" -c "import sys; sys.path.insert(0, r'C:\Users\pc\Desktop\INfY\INFY\backend'); import app.main; print('OK', app.main.app.title)"`
+- Result: `OK BillSphere`
+
+---
+
+## Use this exact startup flow
+
+### Backend
+```powershell
+cd "C:\Users\pc\Desktop\INfY\INFY\backend"
+$env:PYTHONPATH = (Get-Location).Path
+& "C:\Users\pc\Desktop\INfY\INFY\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+### External app
+```powershell
+cd "C:\Users\pc\Desktop\INfY\app"
+python -m http.server 3001
+```
+
+### Frontend
+```powershell
+cd "C:\Users\pc\Desktop\INfY\INFY\frontend"
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+> Do not use bare `python` from PATH here unless it resolves to the project venv. Use the full path to the 3.12 venv for the backend.
+
+This is the stable setup for the current system.

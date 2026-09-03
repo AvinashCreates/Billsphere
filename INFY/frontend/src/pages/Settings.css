@@ -5,7 +5,7 @@
 ========================================================= */
 
 .settings-page {
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 65px);
   width: 100%;
   padding: 4px 0 60px;
   color: #ffffff;
@@ -16,7 +16,7 @@
 ========================================================= */
 
 .settings-page-header {
-  margin-bottom: 28px;
+  margin-bottom: 26px;
 }
 
 .settings-eyebrow {
@@ -33,7 +33,7 @@
 .settings-page-header h1 {
   margin: 0;
   color: #ffffff;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 600;
   letter-spacing: -0.03em;
 }
@@ -52,9 +52,9 @@
 
 .settings-layout {
   display: grid;
-  grid-template-columns: 265px minmax(0, 1fr);
+  grid-template-columns: 238px minmax(0, 1fr);
   align-items: start;
-  gap: 22px;
+  gap: 20px;
 }
 
 /* =========================================================
@@ -66,7 +66,7 @@
   top: 20px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 18px;
+  border-radius: 14px;
   background: #0d0d0d;
 }
 
@@ -199,7 +199,7 @@
 .settings-card {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 18px;
+  border-radius: 16px;
   background: #0d0d0d;
 }
 
@@ -208,7 +208,7 @@
 }
 
 .settings-card-header {
-  padding: 23px 25px 20px;
+  padding: 23px 23px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.055);
 }
 
@@ -238,7 +238,7 @@
 }
 
 .settings-card-body {
-  padding: 22px 25px 25px;
+  padding: 22px 23px 25px;
 }
 
 /* =========================================================
@@ -258,7 +258,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(214, 179, 106, 0.22);
-  border-radius: 17px;
+  border-radius: 15px;
   background: linear-gradient(
     145deg,
     rgba(214, 179, 106, 0.16),
@@ -1264,6 +1264,131 @@ html.light .settings-toast {
 
 html.light .settings-modal {
   background: #ffffff;
+}
+
+/* Keep customer settings consistent with the dark application shell. */
+html.light .settings-page {
+  color: #ffffff;
+}
+
+html.light .settings-page .settings-sidebar,
+html.light .settings-page .settings-card {
+  border-color: rgba(255, 255, 255, 0.07);
+  background: #0d0d0d;
+}
+
+html.light .settings-page .settings-page-header h1,
+html.light .settings-page .settings-card-header h2,
+html.light .settings-page .settings-profile h3 {
+  color: #ffffff;
+}
+
+html.light .settings-page .settings-page-header p,
+html.light .settings-page .settings-card-header p {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+html.light .settings-page .settings-sidebar-title {
+  color: rgba(255, 255, 255, 0.27);
+}
+
+html.light .settings-page .settings-nav-item {
+  color: rgba(255, 255, 255, 0.43);
+}
+
+html.light .settings-page .settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+html.light .settings-page .settings-nav-item.active {
+  border-color: rgba(214, 179, 106, 0.15);
+  background: rgba(214, 179, 106, 0.055);
+  color: #e7cb8b;
+}
+
+html.light .settings-page .settings-nav-content small {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+html.light .settings-page .settings-nav-item.active .settings-nav-content small {
+  color: rgba(231, 203, 139, 0.45);
+}
+
+html.light .settings-page .settings-card-header,
+html.light .settings-page .settings-divider,
+html.light .settings-page .setting-row,
+html.light .settings-page .action-row,
+html.light .settings-page .session-row,
+html.light .settings-page .connection-row,
+html.light .settings-page .support-card,
+html.light .settings-page .notification-row,
+html.light .settings-page .notification-group-header {
+  border-color: rgba(255, 255, 255, 0.055);
+}
+
+html.light .settings-page .setting-row-text h3,
+html.light .settings-page .action-content h3,
+html.light .settings-page .session-row h3,
+html.light .settings-page .connection-content h3,
+html.light .settings-page .support-content h3,
+html.light .settings-page .notification-row h4,
+html.light .settings-page .danger-box h3 {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+html.light .settings-page .setting-row-text p,
+html.light .settings-page .action-content p,
+html.light .settings-page .session-row p,
+html.light .settings-page .connection-content p,
+html.light .settings-page .support-content p,
+html.light .settings-page .notification-row p,
+html.light .settings-page .danger-box p {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+html.light .settings-page .form-field label {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+html.light .settings-page .form-field input,
+html.light .settings-page .form-field select {
+  border-color: rgba(255, 255, 255, 0.075);
+  background: #090909;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+html.light .settings-page .form-field input:focus,
+html.light .settings-page .form-field select:focus {
+  border-color: rgba(214, 179, 106, 0.35);
+  background: #0b0b0b;
+}
+
+html.light .settings-page .secondary-button {
+  border-color: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.52);
+}
+
+html.light .settings-page .theme-option {
+  border-color: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.015);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html.light .settings-page .theme-option strong {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+html.light .settings-page .theme-option p,
+html.light .settings-page .notification-columns span,
+html.light .settings-page .connection-status > span {
+  color: rgba(255, 255, 255, 0.23);
+}
+
+html.light .settings-page .settings-modal {
+  border-color: rgba(255, 255, 255, 0.07);
+  background: #0d0d0d;
 }
 
 /* =========================================================

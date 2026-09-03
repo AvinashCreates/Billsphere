@@ -14,7 +14,11 @@ Endpoints:
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.dependencies import database_session, get_current_user_token
+from app.dependencies import (
+    database_session,
+    get_current_user_token,
+    get_optional_user_token,
+)
 from app.schemas.plan import (
     PlanCreate,
     PlanListResponse,
@@ -87,10 +91,12 @@ def list_all(
         examples=["Amazon"],
     ),
     db: Session = Depends(database_session),
-    current_user: dict = Depends(get_current_user_token),
+    _current_user: dict | None = Depends(get_optional_user_token),
 ):
     """
     List active plans with pagination and filters.
+
+    Public storefront access: unauthenticated users can browse catalog plans.
     """
 
     return list_plans(
@@ -109,10 +115,12 @@ def list_all(
 def get_plan(
     plan_id: int,
     db: Session = Depends(database_session),
-    current_user: dict = Depends(get_current_user_token),
+    _current_user: dict | None = Depends(get_optional_user_token),
 ):
     """
     Get a plan by ID.
+
+    Public storefront access: unauthenticated users can view plan details.
     """
 
     plan = get_plan_by_id(

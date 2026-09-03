@@ -26,12 +26,20 @@ PUBLIC_ROUTES = {
     "/redoc",
     "/openapi.json",
 
-    # Authentication routes
+    # Authentication routes (legacy + API v1 mount paths)
     "/auth/register",
     "/auth/login",
     "/auth/refresh",
     "/auth/forgot-password",
     "/auth/reset-password",
+    "/api/v1/register",
+    "/api/v1/login",
+    "/api/v1/refresh",
+    "/api/v1/forgot-password",
+    "/api/v1/reset-password",
+
+    # Public storefront product catalog
+    "/api/v1/plans",
 
     # Payment confirmation links contain their own single-use token.
     "/api/v1/payments/confirmation",
@@ -63,11 +71,27 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     ):
         path = request.url.path
 
+        # CORS preflight requests must reach CORSMiddleware without JWT validation.
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # --------------------------------------------------
         # Allow public routes
         # --------------------------------------------------
 
         if path in PUBLIC_ROUTES:
+            return await call_next(request)
+
+        if path.startswith("/api/v1/plans"):
+            return await call_next(request)
+
+        if path.startswith("/api/v1/register"):
+            return await call_next(request)
+
+        if path.startswith("/api/v1/login"):
+            return await call_next(request)
+
+        if path.startswith("/api/v1/refresh"):
             return await call_next(request)
 
         # --------------------------------------------------

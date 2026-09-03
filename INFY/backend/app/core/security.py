@@ -174,18 +174,21 @@ def decode_token(
             ],
         )
 
-        
-
         return payload
-
-    
-
 
     except JWTError:
 
         return None
 
-    # ==========================================================
+
+# Backwards-compatible alias used by middleware and older code.
+def decode_access_token(token: str):
+    """Compatibility wrapper for JWT decode helpers."""
+
+    return decode_token(token)
+
+
+# ==========================================================
 # Verify Token Type
 # ==========================================================
 

@@ -968,13 +968,13 @@ The Springboard Internship repository uses individual branches for contributors.
 
 For this project, the working branch is:
 
-Sravanthi
+Pamarthi Avinash
 
 The general workflow is:
 
 Local BillSphere
        ↓
-Sravanthi Branch
+Pamarthi Avinash Branch
        ↓
 Commit Changes
        ↓
@@ -998,7 +998,7 @@ git commit -m "Update BillSphere billing features"
 
 Push to the Springboard branch:
 
-git push springboard Sravanthi
+git push springboard "Pamarthi Avinash"
 
 Check branch:
 
@@ -1136,7 +1136,7 @@ A typical development workflow is:
         ↓
 9. Commit changes
         ↓
-10. Push to Sravanthi branch
+10. Push to Pamarthi Avinash branch
         ↓
 11. Create Pull Request
 📌 Project Information
@@ -1172,7 +1172,7 @@ Recurring Revenue / Subscription / Billing Automation Platform
 The project focuses on implementing a practical SaaS billing platform covering subscription management, recurring revenue workflows, billing automation, payment handling, invoice generation, and administrative monitoring.
 
 👥 Contributors
-Sravanthi Aare
+Pamarthi Avinash
 
 Full-stack development, billing workflows, customer dashboard, admin dashboard, subscription management, payment flow, invoice management, authentication, frontend integration, and backend development.
 
