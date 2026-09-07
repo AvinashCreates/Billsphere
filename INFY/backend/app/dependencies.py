@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import decode_token
+from app.models.user import User
 
 
 # ==========================================================
@@ -221,15 +222,36 @@ def require_role(
         )
     """
 
+    normalized_allowed_roles = {
+        role.strip().lower()
+        for role in allowed_roles
+    }
+
     def role_checker(
         current_user: dict = Depends(
             get_current_user_token
         ),
+        db: Session = Depends(database_session),
     ) -> dict:
 
-        user_role = current_user.get("role")
+        try:
+            user_id = int(current_user.get("sub"))
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid user token",
+            )
 
-        if user_role not in allowed_roles:
+        user = db.get(User, user_id)
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Active user account required",
+            )
+
+        user_role = user.role.strip().lower()
+
+        if user_role not in normalized_allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",
@@ -238,3 +260,14 @@ def require_role(
         return current_user
 
     return role_checker
+
+
+def get_owner_scope(
+    current_user: dict,
+    db: Session,
+) -> int | None:
+    """Return the owner id for customers, or None for an administrator."""
+
+    user_id = int(current_user["sub"])
+    user = db.get(User, user_id)
+    return None if user and user.role.strip().lower() == "admin" else user_id

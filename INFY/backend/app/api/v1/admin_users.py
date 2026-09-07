@@ -23,7 +23,7 @@ def require_admin(
     user = db.get(User, user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Active user account required")
-    if user.role != "admin":
+    if user.role.strip().lower() != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return user
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
 import {
   Activity,
   AlertCircle,
@@ -29,9 +30,10 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 type Section =
   | "overview"
@@ -70,6 +72,7 @@ interface Plan {
 
 interface Customer {
   id: number;
+  customer_id?: number | null;
   name?: string;
   full_name?: string;
   email?: string;
@@ -291,6 +294,7 @@ function StatCard({
 }
 
 export default function AdminDashboard() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [activeSection, setActiveSection] =
     useState<Section>("overview");
 
@@ -397,6 +401,8 @@ export default function AdminDashboard() {
     if (Array.isArray(data?.items)) return data.items;
     if (Array.isArray(data?.data)) return data.data;
     if (Array.isArray(data?.results)) return data.results;
+    if (Array.isArray(data?.plans)) return data.plans;
+    if (Array.isArray(data?.customers)) return data.customers;
 
     return [];
   };
@@ -410,8 +416,8 @@ export default function AdminDashboard() {
       }
 
       const results = await Promise.allSettled([
-        apiRequest("/plans"),
-        apiRequest("/customers"),
+        apiRequest("/plans?page=1&page_size=100"),
+        apiRequest("/customers/admin"),
         apiRequest("/subscriptions"),
         apiRequest("/invoices"),
         apiRequest("/payments"),
@@ -482,8 +488,10 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated || user?.role !== "admin") return;
+
     fetchDashboardData();
-  }, []);
+  }, [authLoading, isAuthenticated, user?.role]);
 
   const activeSubscriptions = useMemo(
     () =>
@@ -569,7 +577,7 @@ export default function AdminDashboard() {
 
   const customerLabel = (customerId?: number) => {
     const customer = customers.find(
-      (item) => item.id === customerId
+      (item) => (item.customer_id ?? item.id) === customerId
     );
 
     if (!customer) {
@@ -587,7 +595,7 @@ export default function AdminDashboard() {
 
   const customerEmail = (customerId?: number) => {
     const customer = customers.find(
-      (item) => item.id === customerId
+      (item) => (item.customer_id ?? item.id) === customerId
     );
 
     return customer?.email || "—";
@@ -1575,12 +1583,13 @@ export default function AdminDashboard() {
                     subscriptions.filter(
                       (subscription) =>
                         subscription.customer_id ===
-                        customer.id
+                        (customer.customer_id ?? customer.id)
                     );
 
                   const customerInvoices = invoices.filter(
                     (invoice) =>
-                      invoice.customer_id === customer.id
+                      invoice.customer_id ===
+                      (customer.customer_id ?? customer.id)
                   );
 
                   return (
@@ -2093,6 +2102,14 @@ export default function AdminDashboard() {
         return renderOverview();
     }
   };
+
+  if (authLoading) {
+    return <div className="app-loading" role="status">Loading admin workspace...</div>;
+  }
+
+  if (!isAuthenticated || user?.role !== "admin") {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="admin-shell">

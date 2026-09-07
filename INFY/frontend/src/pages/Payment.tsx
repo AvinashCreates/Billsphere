@@ -49,7 +49,7 @@ import "./Payment.css";
 // ============================================================
 
 const API_URL =
-  "http://127.0.0.1:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 // ============================================================
 // TYPES
@@ -444,7 +444,16 @@ export default function Payment() {
     routePlanId ||
     (navigationState?.planId != null
       ? String(navigationState.planId)
-      : "");
+      : (() => {
+          try {
+            const lastCheckout = JSON.parse(
+              localStorage.getItem("billsphere_last_successful_checkout") || "{}"
+            );
+            return lastCheckout.plan_id ? String(lastCheckout.plan_id) : "";
+          } catch {
+            return "";
+          }
+        })());
 
   const { notify } =
     useToast();
@@ -602,6 +611,10 @@ export default function Payment() {
             : {}),
         };
 
+        if (navigationState?.plan) {
+          setPlan(navigationState.plan);
+        }
+
         let response =
           await fetch(
             `${API_URL}/plans/${planId}`,
@@ -613,7 +626,9 @@ export default function Payment() {
 
         let data: any = null;
 
-        if (response.ok) {
+        if (navigationState?.plan) {
+          data = navigationState.plan;
+        } else if (response.ok) {
           data =
             await response.json();
         } else {
@@ -729,6 +744,7 @@ export default function Payment() {
 
     loadPlan();
   }, [
+    navigationState?.plan,
     planId,
     notify,
   ]);
@@ -2402,12 +2418,12 @@ function PaymentPending({
           <div>
 
             <strong>
-              Your subscription is not active yet.
+              Complete payment confirmation to activate your subscription.
             </strong>
 
             <p>
-              It will be activated only after
-              successful payment confirmation.
+              Open the confirmation link below and choose Confirm Payment.
+              Your invoice will be marked paid and the subscription will then become active.
             </p>
 
           </div>

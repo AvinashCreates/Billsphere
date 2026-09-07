@@ -146,30 +146,34 @@ export const AuthProvider: React.FC<{
           // Save user
           // ------------------------------------------------
 
-          setUser(userData);
+          const normalizedUser = {
+            ...userData,
+            role: userData.role?.toLowerCase().trim() as User["role"],
+          };
+
+          setUser(normalizedUser);
 
 
           // ------------------------------------------------
           // Synchronize role
           // ------------------------------------------------
 
-          if (userData?.role) {
+          if (normalizedUser?.role) {
 
             localStorage.setItem(
               "role",
-              userData.role
+              normalizedUser.role
             );
           }
 
 
-          return userData;
+          return normalizedUser;
 
         } catch (err) {
 
-          console.error(
-            "Failed to fetch user profile:",
-            err
-          );
+          if (!(err instanceof Error && "status" in err && err.status === 401)) {
+            console.error("Failed to fetch user profile:", err);
+          }
 
 
           // ------------------------------------------------
@@ -265,23 +269,28 @@ export const AuthProvider: React.FC<{
       // Save user
       // ----------------------------------------------------
 
-      setUser(userData);
+      const normalizedUser = {
+        ...userData,
+        role: userData.role?.toLowerCase().trim() as User["role"],
+      };
+
+      setUser(normalizedUser);
 
 
       // ----------------------------------------------------
       // Save role
       // ----------------------------------------------------
 
-      if (userData?.role) {
+      if (normalizedUser?.role) {
 
         localStorage.setItem(
           "role",
-          userData.role
+          normalizedUser.role
         );
       }
 
 
-      return userData;
+      return normalizedUser;
 
     } catch (err) {
 

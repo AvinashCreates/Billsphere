@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000/api/v1";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 // ---- Register ----
 // Your backend expects JSON: { email, password, role }
@@ -235,8 +235,11 @@ export async function getCustomersAdmin(filters?: { payment_status?: string; pla
   const response = await fetch(`${API_URL}/customers/admin${query}`, {
     headers: authHeaders(),
   });
-  if (!response.ok) throw new Error("Failed to load customers");
-  return response.json();
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.detail || "Failed to load customers");
+  }
+  return Array.isArray(result) ? result : result.items || [];
 }
 
 // ---- Set password (from invite link) ----

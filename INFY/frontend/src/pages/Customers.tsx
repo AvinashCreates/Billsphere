@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Users, UserPlus, Trash2, Mail, Globe, Calendar, Filter, Download, ShieldAlert } from "lucide-react";
 import * as XLSX from "xlsx";
-import { getCustomersAdmin, createCustomer, deleteCustomer, getPlans } from "../assets/services/api";
+import { getCustomersAdmin, createCustomer, getPlans } from "../assets/services/api";
+import { deleteAdminUser } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/common/Card";
@@ -125,7 +126,7 @@ function Customers() {
 
     setDeletingId(customer.id);
     try {
-      await deleteCustomer(customer.id);
+      await deleteAdminUser(customer.id);
       notify({
         title: "Customer Deleted",
         description: `Removed "${customer.name}" from customer roster.`,
@@ -200,8 +201,8 @@ function Customers() {
       <AppShell>
         <EmptyState
           title="Access Restricted"
-          description="Only administrator accounts are authorized to view and manage customer directories."
-          primaryAction={{ label: "Go to Dashboard", path: "/dashboard" }}
+          description="Sign in with an administrator account to view registered customers and billing status."
+          primaryAction={{ label: "Sign in as administrator", path: "/login?redirect=%2Fcustomers" }}
           icon={<ShieldAlert size={24} />}
         />
       </AppShell>

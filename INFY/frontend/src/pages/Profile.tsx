@@ -3,15 +3,17 @@ import { Camera, Save, Sparkles } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import Card from "../components/Card";
 import { useToast } from "../components/ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
 
 function Profile() {
-  const user: any = JSON.parse(localStorage.getItem("user") || "{}");
+  const { user: authUser } = useAuth();
+  const user: any = authUser || JSON.parse(localStorage.getItem("user") || "{}");
   const [profile, setProfile] = useState({
     name: user.name || "User",
     email: user.email || "",
     phone: user.phone || "",
     about: user.about || "",
-    image: user.image || "",
+    image: user.image || localStorage.getItem(`billsphere_avatar_${user.id || "current"}`) || "",
     joined: user.created_at || new Date().toLocaleDateString(),
     subscription: user.subscription || "Free",
   });
@@ -29,9 +31,11 @@ function Profile() {
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
+        const image = reader.result as string;
+        localStorage.setItem(`billsphere_avatar_${user.id || "current"}`, image);
         setProfile({
           ...profile,
-          image: reader.result as string,
+          image,
         });
       };
       reader.readAsDataURL(file);

@@ -20,6 +20,9 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.customer import Customer
+from app.models.plan import Plan
+from app.models.subscription import Subscription
+from app.models.user import User
 from app.schemas.customer import (
     CustomerCreate,
     CustomerUpdate,
@@ -197,6 +200,69 @@ def list_customers(
         "page_size": page_size,
         "customers": customers,
     }
+
+
+def list_admin_customers(
+    db: Session,
+    payment_status: str | None = None,
+    platform: str | None = None,
+    plan_type: str | None = None,
+) -> list[dict]:
+    """Return registered customer accounts with their current billing data."""
+
+    users = (
+        db.query(User)
+        .filter(User.role.ilike("customer"))
+        .order_by(User.created_at.desc())
+        .all()
+    )
+
+    rows: list[dict] = []
+    for user in users:
+        customer = (
+            db.query(Customer)
+            .filter(Customer.owner_id == user.id, Customer.is_active.is_(True))
+            .order_by(Customer.created_at.desc())
+            .first()
+        )
+        subscription = None
+        if customer:
+            subscription = (
+                db.query(Subscription)
+                .filter(Subscription.customer_id == customer.id)
+                .order_by(Subscription.start_date.desc())
+                .first()
+            )
+
+        plan = db.get(Plan, subscription.plan_id) if subscription else None
+        status_value = (
+            "paid" if subscription and subscription.status == "active"
+            else subscription.status if subscription else "none"
+        )
+
+        row = {
+            "id": user.id,
+            "customer_id": customer.id if customer else None,
+            "name": f"{user.first_name} {user.last_name}".strip(),
+            "email": user.email,
+            "billing_country": customer.country if customer and customer.country else "-",
+            "created_at": user.created_at,
+            "platform": plan.platform if plan else None,
+            "plan_type": subscription.billing_cycle if subscription else None,
+            "payment_status": status_value,
+            "current_period_end": subscription.current_period_end if subscription else None,
+            "trial_ends_at": subscription.end_date if subscription and subscription.status == "trial" else None,
+        }
+
+        if payment_status and status_value != payment_status:
+            continue
+        if platform and row["platform"] != platform:
+            continue
+        if plan_type and row["plan_type"] != plan_type:
+            continue
+        rows.append(row)
+
+    return rows
 
 
 # ==========================================================

@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import (
     database_session,
     get_current_user_token,
+    get_owner_scope,
 )
 
 from app.models.subscription_history import (
@@ -93,9 +94,7 @@ def create(
     The selected plan_id is validated against the plans table.
     """
 
-    created_by = int(
-        current_user["sub"],
-    )
+    created_by = get_owner_scope(current_user, db)
 
     return create_subscription(
         db=db,

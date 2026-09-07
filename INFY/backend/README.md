@@ -1,3 +1,31 @@
+## Milestone status
+Backend implementation is structured around the supplied 8-week project specification. The React dashboard can consume the analytics, invoice, payment-retry, audit, report and billing-cycle APIs directly.
+You were right: there was no Python 3.14 on this machine, and the stale resolution was the issue. I did not find any project file hard-coded to Python 3.14, so no repo code changes were needed.
+I verified the actual project environment works with the Python 3.12 venv:
+
+## Use this exact startup flow
+### Backend
+```powershell
+cd "C:\Users\pc\Desktop\INfY\INFY\backend"
+$env:PYTHONPATH = (Get-Location).Path
+& "C:\Users\pc\Desktop\INfY\INFY\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+### External app
+```powershell
+cd "C:\Users\pc\Desktop\INfY\app"
+python -m http.server 3001
+```
+
+### Frontend
+```powershell
+cd "C:\Users\pc\Desktop\INfY\INFY\frontend"
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+> Do not use bare `python` from PATH here unless it resolves to the project venv. Use the full path to the 3.12 venv for the backend.
+
+This is the stable setup for the current system.
 # BillSphere Backend
 
 Recurring Payment, Subscription Management & Billing Automation Platform.
@@ -81,10 +109,9 @@ Recurring Payment, Subscription Management & Billing Automation Platform.
 All APIs are under `/api/v1`.
 
 - `/auth`
+- `/admin/users`
 - `/customers`
 - `/plans`
-- `/subscriptions`
-- `/billing-cycles`
 - `/invoices`
 - `/payments`
 - `/payment-retries`
@@ -130,7 +157,7 @@ Windows:
 
 ```powershell
 py -3.12 -m venv .venv
-.venv\Scripts\activate
+& .\.venv\Scripts\Activate.ps1
 ```
 
 ### 2. Install packages
@@ -144,8 +171,6 @@ python -m pip install -r requirements.txt
 Copy:
 
 ```text
-.env.example → .env
-```
 
 Set your local PostgreSQL password and database URL.
 
@@ -172,8 +197,12 @@ alembic upgrade head
 
 ### 6. Start API
 
+For Windows development, use the project virtual environment explicitly so
+the API does not resolve to a different global Python installation:
+
 ```powershell
-uvicorn app.main:app --reload
+$env:PYTHONPATH = (Get-Location).Path
+& ".\.venv\Scripts\python.exe" -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Swagger:
@@ -187,7 +216,7 @@ http://127.0.0.1:8000/docs
 Windows development:
 
 ```powershell
-celery -A app.workers.celery_app worker --loglevel=info --pool=solo
+& ".\.venv\Scripts\celery.exe" -A app.workers.celery_app worker --loglevel=info --pool=solo
 ```
 
 ### 8. Start Celery Beat
@@ -195,7 +224,7 @@ celery -A app.workers.celery_app worker --loglevel=info --pool=solo
 In another terminal:
 
 ```powershell
-celery -A app.workers.celery_app beat --loglevel=info
+& ".\.venv\Scripts\celery.exe" -A app.workers.celery_app beat --loglevel=info
 ```
 
 Celery Beat schedules:
@@ -220,6 +249,9 @@ Example:
   },
   {
     "id": 2,
+You were right: there was no Python 3.14 on this machine, and the stale resolution was the issue. I did not find any project file hard-coded to Python 3.14, so no repo code changes were needed.
+
+I verified the actual project environment works with the Python 3.12 venv:
     "invoice_id": 10,
     "description": "API usage x100",
     "item_type": "usage",
@@ -248,49 +280,6 @@ Example:
 2. Create customer.
 3. Create plan.
 4. Create subscription.
-5. Verify billing cycle.
-6. Activate trial.
-7. Create/generate invoice.
-8. Verify invoice line items.
-9. Create payment.
-10. Call mock gateway or payment success endpoint.
-11. Verify invoice becomes `paid`.
-12. Test failed payment.
-13. Verify subscription becomes `past_due`.
-14. Inspect `/payment-retries`.
-15. Run retry task.
-16. Test webhook events.
-17. Test plan change/proration.
-18. Test refund.
-19. Download invoice PDF.
-20. Verify analytics and audit logs.
-
-## Load testing
-
-Locust script:
-
-```text
-app/loadtest/locustfile.py
-```
-
-Example:
-
-```powershell
-locust -f app/loadtest/locustfile.py
-```
-
-## Security
-
-Do not commit:
-
-- `.env`
-- database passwords
-- SMTP passwords
-- JWT secrets
-- production API keys
-
-Use `.env.example` as the safe configuration template.
-
 ## Database note
 
 The backend uses `Base.metadata.create_all()` for local development compatibility, but Alembic is the recommended migration mechanism:
@@ -307,46 +296,3 @@ The latest migration adds compatibility for:
 ## Milestone status
 
 Backend implementation is structured around the supplied 8-week project specification. The React dashboard can consume the analytics, invoice, payment-retry, audit, report and billing-cycle APIs directly.
-
-
-The issue is exactly what you suspected: the environment was still resolving to a stale Python 3.14 path. I’m switching the app and startup commands to the confirmed Python 3.12 venv so the runtime is stable and the server can start without the false import errors.
-
-No matches found. Your search pattern might be excluded completely by either the search.exclude settings or .*ignore files.
-If you believe that it should have results, you can check into the .*ignore files and the exclude setting (here are some excluded patterns for reference:[**/node_modules,**/bower_components,**/*.code-search]).
-Then if you want to include those files you can call the tool again by setting "includeIgnoredFiles" to true.
-
-## ✅ Python 3.12 is the correct runtime
-
-You were right: there was no Python 3.14 on this machine, and the stale resolution was the issue. I did not find any project file hard-coded to Python 3.14, so no repo code changes were needed.
-
-I verified the actual project environment works with the Python 3.12 venv:
-
-- Verified command: `& "C:\Users\pc\Desktop\INfY\INFY\backend\.venv\Scripts\python.exe" -c "import sys; sys.path.insert(0, r'C:\Users\pc\Desktop\INfY\INFY\backend'); import app.main; print('OK', app.main.app.title)"`
-- Result: `OK BillSphere`
-
----
-
-## Use this exact startup flow
-
-### Backend
-```powershell
-cd "C:\Users\pc\Desktop\INfY\INFY\backend"
-$env:PYTHONPATH = (Get-Location).Path
-& "C:\Users\pc\Desktop\INfY\INFY\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-### External app
-```powershell
-cd "C:\Users\pc\Desktop\INfY\app"
-python -m http.server 3001
-```
-
-### Frontend
-```powershell
-cd "C:\Users\pc\Desktop\INfY\INFY\frontend"
-npm run dev -- --host 127.0.0.1 --port 5173
-```
-
-> Do not use bare `python` from PATH here unless it resolves to the project venv. Use the full path to the 3.12 venv for the backend.
-
-This is the stable setup for the current system.

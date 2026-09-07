@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 
 import {
   Bell,
@@ -22,9 +22,23 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { ThemeSwitcher } from "../components/ThemeSwitcher";
+import { useAuth } from "../contexts/AuthContext";
 
 function CustomerLayout() {
   const [mobileMenu, setMobileMenu] = useState(false);
+  const location = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  const isPublicConfirmation = location.pathname === "/payment-confirmation";
+
+  if (isLoading) {
+    return <div className="app-loading" role="status">Loading customer workspace...</div>;
+  }
+
+  if (!isAuthenticated && !isPublicConfirmation) {
+    const redirect = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
+  }
 
   return (
     <div className="min-h-screen bg-[#080808] text-white">

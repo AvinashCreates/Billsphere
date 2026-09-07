@@ -22,6 +22,8 @@ from sqlalchemy.orm import Session
 from app.dependencies import (
     database_session,
     get_current_user_token,
+    get_owner_scope,
+    require_role,
 )
 
 from app.schemas.payment import (
@@ -94,7 +96,7 @@ def payment_confirmation_action(
 def create_checkout(
     checkout_data: CheckoutRequest,
     db: Session = Depends(database_session),
-    current_user: dict = Depends(get_current_user_token),
+    current_user: dict = Depends(require_role(["customer"])),
 ):
     """Create and explicitly process a safe mock checkout."""
 

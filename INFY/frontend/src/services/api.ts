@@ -1,10 +1,10 @@
 // ============================================================
 // BillSphere Frontend API Service
 // Backend: FastAPI
-// Base URL: http://127.0.0.1:8000/api/v1
+// Keep the browser and API on the same hostname during local development.
 // ============================================================
 
-const API_URL = "http://127.0.0.1:8000/api/v1";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 export class ApiError extends Error {
   status: number;
@@ -352,8 +352,9 @@ export async function getCurrentUser(): Promise<CurrentUser> {
   const result = await parseResponse(response);
 
   if (!response.ok) {
-    throw new Error(
-      getErrorMessage(result, "Failed to load current user")
+    throw new ApiError(
+      getErrorMessage(result, "Failed to load current user"),
+      response.status
     );
   }
 

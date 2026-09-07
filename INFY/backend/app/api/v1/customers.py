@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import (
     database_session,
     get_current_user_token,
+    require_role,
 )
 
 from app.schemas.customer import (
@@ -34,6 +35,7 @@ from app.services.customer_service import (
     create_customer,
     delete_customer,
     get_customer_by_id,
+    list_admin_customers,
     list_customers,
     update_customer,
 )
@@ -47,6 +49,26 @@ router = APIRouter(
     prefix="/customers",
     tags=["Customers"],
 )
+
+
+@router.get(
+    "/admin",
+    dependencies=[Depends(require_role(["admin"]))],
+)
+def list_admin_customer_accounts(
+    payment_status: str | None = Query(default=None),
+    platform: str | None = Query(default=None),
+    plan_type: str | None = Query(default=None),
+    db: Session = Depends(database_session),
+):
+    """List registered customer accounts for the admin workspace."""
+
+    return list_admin_customers(
+        db,
+        payment_status=payment_status,
+        platform=platform,
+        plan_type=plan_type,
+    )
 
 
 # ==========================================================

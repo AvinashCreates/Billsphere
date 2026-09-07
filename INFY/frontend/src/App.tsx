@@ -22,13 +22,13 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const UserDashboard = lazy(() => import("./pages/UserDashboard"));
 const Payment = lazy(() => import("./pages/Payment"));
+const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
 const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
 const Customers = lazy(() => import("./pages/Customers"));
 const Invoices = lazy(() => import("./pages/Invoices"));
 const Plans = lazy(() => import("./pages/Plans"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Profile = lazy(() => import("./pages/Profile"));
-const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
 const MyPlan = lazy(() => import("./pages/MyPlan"));
 const Billing = lazy(() => import("./pages/Billing"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
@@ -189,7 +189,7 @@ function AppContent() {
 
         <Route
           path="/customer/payments"
-          element={<Payment />}
+          element={<PaymentHistory />}
         />
 
         {/* ==================================================

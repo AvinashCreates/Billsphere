@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   ArrowRight,
   Bell,
@@ -40,6 +40,7 @@ import {
 } from "../services/api";
 
 import { useToast } from "../components/ToastProvider";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Subscription {
   id: number;
@@ -105,6 +106,7 @@ function shortDate(value: string | null | undefined) {
 
 function UserDashboard() {
   const { notify } = useToast();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -267,9 +269,11 @@ function UserDashboard() {
   }
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+
     loadCurrentUser();
     loadSubscriptions();
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   // =====================================================
   // CURRENT SUBSCRIPTION
@@ -323,6 +327,14 @@ function UserDashboard() {
       null,
     [payments, currentInvoice]
   );
+
+  if (authLoading) {
+    return <div className="app-loading" role="status">Loading your workspace...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   const nextBill =
     currentSubscription?.next_billing_date ||

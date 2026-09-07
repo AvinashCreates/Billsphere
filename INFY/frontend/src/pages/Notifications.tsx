@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   Bell,
@@ -205,6 +206,7 @@ const initialNotifications: NotificationRecord[] = [
 ];
 
 function Notifications() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] =
     useState<NotificationRecord[]>(initialNotifications);
 
@@ -302,6 +304,17 @@ function Notifications() {
       read: true,
     });
   };
+
+  function openNotificationTarget(notification: NotificationRecord) {
+    if (notification.actionType === "payment") {
+      navigate("/customer/payment-history");
+    } else if (notification.actionType === "invoice") {
+      navigate("/customer/invoices");
+    } else if (notification.actionType === "subscription") {
+      navigate("/customer/subscriptions");
+    }
+    setSelectedNotification(null);
+  }
 
   return (
     <div className="notifications-page">
@@ -575,6 +588,7 @@ function Notifications() {
               });
             }
           }}
+          onAction={() => openNotificationTarget(selectedNotification)}
         />
 
       )}
@@ -947,10 +961,12 @@ function NotificationModal({
   notification,
   onClose,
   onToggleRead,
+  onAction,
 }: {
   notification: NotificationRecord;
   onClose: () => void;
   onToggleRead: () => void;
+  onAction: () => void;
 }) {
   const visual = getNotificationVisual(
     notification.type
@@ -1065,6 +1081,7 @@ function NotificationModal({
             <button
               type="button"
               className="notification-modal-action"
+              onClick={onAction}
             >
               {notification.actionLabel}
             </button>

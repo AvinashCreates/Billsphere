@@ -7,6 +7,7 @@ import {
   submitPaymentConfirmation,
   type PaymentConfirmationResult,
 } from "../services/api";
+import "./PaymentConfirmation.css";
 
 function money(value: number | string, currency: string) {
   return new Intl.NumberFormat("en-IN", {
@@ -98,7 +99,11 @@ function PaymentConfirmation() {
   // re-loading the checkout form.
   // ==========================================================
   function goBackToPayment() {
-    navigate("/customer/payments", {
+    const paymentPath = current?.plan_id
+      ? `/customer/plans/${current.plan_id}/payment`
+      : "/customer/payment-history";
+
+    navigate(paymentPath, {
       replace: true,
       state: {
         confirmed,
@@ -147,10 +152,7 @@ function PaymentConfirmation() {
           <div className="space-y-6">
             <div>
               {confirmed ? (
-                <CheckCircle2
-                  className="text-emerald-300"
-                  size={40}
-                />
+                <SuccessCelebration />
               ) : rejected ? (
                 <XCircle
                   className="text-red-300"
@@ -298,6 +300,37 @@ function PaymentConfirmation() {
           </div>
         ) : null}
       </main>
+    </div>
+  );
+}
+
+function SuccessCelebration() {
+  return (
+    <div className="payment-success-celebration" aria-label="Payment successful">
+      <div className="payment-success-card">
+        <div className="payment-success-card-top">
+          <span className="payment-success-logo"><CheckCircle2 size={12} /></span>
+          <span className="payment-success-home">HOME</span>
+        </div>
+        <div className="payment-success-card-copy">
+          <span>Subscription</span>
+          <strong>Payment complete</strong>
+        </div>
+        <span className="payment-success-card-total">PAID</span>
+      </div>
+
+      <div className="payment-success-receipt">
+        <div className="payment-success-receipt-logo"><CheckCircle2 size={14} /></div>
+        <span className="payment-success-receipt-line short" />
+        <span className="payment-success-receipt-line" />
+        <span className="payment-success-receipt-line medium" />
+        <div className="payment-success-receipt-total">TOTAL PAID <strong>OK</strong></div>
+        <span className="payment-success-barcode" />
+      </div>
+
+      <span className="payment-success-spark payment-success-spark-one" />
+      <span className="payment-success-spark payment-success-spark-two" />
+      <span className="payment-success-spark payment-success-spark-three" />
     </div>
   );
 }

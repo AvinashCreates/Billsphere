@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   ArrowLeft,
@@ -26,7 +26,15 @@ import { useAuth } from "../contexts/AuthContext";
 export default function Login(){
 
 const navigate = useNavigate();
-const { login } = useAuth();
+const { login, user, isLoading: authLoading } = useAuth();
+const [searchParams] = useSearchParams();
+const redirectPath = searchParams.get("redirect");
+
+useEffect(() => {
+  if (!authLoading && user && redirectPath?.startsWith("/")) {
+    navigate(redirectPath, { replace: true });
+  }
+}, [authLoading, navigate, redirectPath, user]);
 
 
 
@@ -172,7 +180,9 @@ const handleLogin = async (
     // ROLE-BASED REDIRECTION
     // ======================================================
 
-    if (user.role === "admin") {
+    if (redirectPath?.startsWith("/")) {
+      navigate(redirectPath, { replace: true });
+    } else if (user.role === "admin") {
 
       navigate(
         "/admin/dashboard",
@@ -633,6 +643,8 @@ style={styles.input}
 
 
 name="password"
+
+autoComplete="current-password"
 
 
 type={

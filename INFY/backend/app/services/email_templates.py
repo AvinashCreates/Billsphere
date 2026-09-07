@@ -240,7 +240,7 @@ def admin_new_customer_email(
     customer_email: str,
     registered_at: str,
 ) -> tuple[str, str]:
-    dashboard_url = f"{settings.FRONTEND_URL}/customers"
+    dashboard_url = f"{settings.FRONTEND_URL}/login?redirect=%2Fcustomers"
 
     subject = "New customer registered"
 

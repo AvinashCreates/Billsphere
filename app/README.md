@@ -20,7 +20,9 @@ The payment redirect uses the following format:
 http://localhost:5173/customer/plans/{planId}/confirm?source=external-app&planName={planName}
 ```
 
-**Important**: Users must be logged in to BillSphere first for the redirect to work.
+The redirect preserves the selected plan through BillSphere login. If the user
+is not logged in, BillSphere sends them to login and returns them to the same
+plan confirmation page after authentication.
 
 ## Plans Available
 

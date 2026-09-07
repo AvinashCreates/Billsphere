@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowDownToLine,
   CalendarDays,
@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 import jsPDF from "jspdf";
+import { getMyPayments } from "../services/api";
 import "./PaymentHistory.css";
 
 type PaymentStatus =
@@ -22,6 +23,14 @@ type PaymentStatus =
   | "Refunded";
 
 type StatusFilter = "All" | PaymentStatus;
+
+function normalizePaymentStatus(status?: string): PaymentStatus {
+  const value = String(status || "pending").toLowerCase();
+  if (["completed", "paid", "success", "successful"].includes(value)) return "Successful";
+  if (["failed", "failure"].includes(value)) return "Failed";
+  if (["refunded", "partially_refunded"].includes(value)) return "Refunded";
+  return "Pending";
+}
 
 interface PaymentRecord {
   id: string;
@@ -35,32 +44,10 @@ interface PaymentRecord {
   billingCycle: string;
 }
 
-const samplePayments: PaymentRecord[] = [
-  {
-    id: "BS-PAY-10001",
-    planName: "Premium",
-    amount: 4999,
-    currency: "INR",
-    paymentDate: "20 Aug 2026",
-    paymentMethod: "Mock Payment",
-    transactionId: "TXN-BS-8F29A1",
-    status: "Successful",
-    billingCycle: "Monthly",
-  },
-  {
-    id: "BS-PAY-10000",
-    planName: "Standard",
-    amount: 1499,
-    currency: "INR",
-    paymentDate: "20 Jul 2026",
-    paymentMethod: "Mock Payment",
-    transactionId: "TXN-BS-71C82B",
-    status: "Successful",
-    billingCycle: "Monthly",
-  },
-];
-
 function PaymentHistory() {
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<StatusFilter>("All");
@@ -68,10 +55,35 @@ function PaymentHistory() {
   const [selectedPayment, setSelectedPayment] =
     useState<PaymentRecord | null>(null);
 
+  useEffect(() => {
+    getMyPayments()
+      .then((records) => {
+        setPayments(
+          records.map((payment: any) => ({
+            id: String(payment.id),
+            planName: payment.plan_name || "Subscription payment",
+            amount: Number(payment.amount || 0),
+            currency: payment.currency || "INR",
+            paymentDate: new Date(payment.paid_at || payment.created_at).toLocaleDateString("en-IN", {
+              day: "2-digit", month: "short", year: "numeric",
+            }),
+            paymentMethod: payment.payment_method || "Payment gateway",
+            transactionId: payment.transaction_id || `PAY-${payment.id}`,
+            status: normalizePaymentStatus(payment.status),
+            billingCycle: payment.billing_cycle || "Subscription billing",
+          }))
+        );
+      })
+      .catch((error: unknown) => {
+        setLoadError(error instanceof Error ? error.message : "Unable to load payment history.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   const filteredPayments = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return samplePayments.filter((payment) => {
+    return payments.filter((payment) => {
       const matchesSearch =
         !query ||
         payment.planName.toLowerCase().includes(query) ||
@@ -84,19 +96,19 @@ function PaymentHistory() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [search, statusFilter]);
+  }, [payments, search, statusFilter]);
 
-  const totalPayments = samplePayments.length;
+  const totalPayments = payments.length;
 
-  const pendingPayments = samplePayments.filter(
+  const pendingPayments = payments.filter(
     (payment) => payment.status === "Pending"
   ).length;
 
-  const failedPayments = samplePayments.filter(
+  const failedPayments = payments.filter(
     (payment) => payment.status === "Failed"
   ).length;
 
-  const totalPaid = samplePayments
+  const totalPaid = payments
     .filter((payment) => payment.status === "Successful")
     .reduce((total, payment) => total + payment.amount, 0);
 
@@ -110,6 +122,14 @@ function PaymentHistory() {
       maximumFractionDigits: 2,
     }).format(amount);
   };
+
+  if (loading) {
+    return <div className="payment-history-loading" role="status">Loading payment history...</div>;
+  }
+
+  if (loadError) {
+    return <div className="payment-history-empty" role="alert">{loadError}</div>;
+  }
 
   /* =====================================================
      REAL PROFESSIONAL PAYMENT RECEIPT PDF

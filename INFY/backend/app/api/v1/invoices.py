@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import (
     database_session,
     get_current_user_token,
+    get_owner_scope,
 )
 
 
@@ -78,7 +79,7 @@ def create(
     return create_invoice(
         db,
         invoice_data,
-        owner_id=int(current_user["sub"]),
+        owner_id=get_owner_scope(current_user, db),
     )
 
 
