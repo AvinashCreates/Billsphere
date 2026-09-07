@@ -200,9 +200,10 @@ alembic upgrade head
 For Windows development, use the project virtual environment explicitly so
 the API does not resolve to a different global Python installation:
 
-```powershell
-$env:PYTHONPATH = (Get-Location).Path
-& ".\.venv\Scripts\python.exe" -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```cmd
+set PYTHONPATH=%cd%
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
 ```
 
 Swagger:

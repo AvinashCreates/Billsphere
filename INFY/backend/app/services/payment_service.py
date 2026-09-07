@@ -462,6 +462,65 @@ def checkout(
                 "already_completed",
                 confirmation_url=None,
             )
+        if payment and invoice and payment.status == PAYMENT_PENDING:
+            raw_token = secrets.token_urlsafe(48)
+            expires_at = _now() + timedelta(
+                minutes=settings.PAYMENT_CONFIRMATION_EXPIRE_MINUTES
+            )
+            confirmation = (
+                db.query(PaymentConfirmation)
+                .filter(PaymentConfirmation.payment_id == payment.id)
+                .first()
+            )
+            if confirmation:
+                confirmation.token_hash = _confirmation_token_hash(raw_token)
+                confirmation.expires_at = expires_at
+                confirmation.used_at = None
+                confirmation.decision = None
+            else:
+                db.add(
+                    PaymentConfirmation(
+                        payment_id=payment.id,
+                        token_hash=_confirmation_token_hash(raw_token),
+                        expires_at=expires_at,
+                    )
+                )
+            db.commit()
+            db.refresh(payment)
+            db.refresh(invoice)
+            db.refresh(existing)
+
+            confirm_url = (
+                f"{settings.FRONTEND_URL}/payment-confirmation?token="
+                f"{quote(raw_token)}&decision=confirm"
+            )
+            reject_url = (
+                f"{settings.FRONTEND_URL}/payment-confirmation?token="
+                f"{quote(raw_token)}&decision=reject"
+            )
+            notification = send_payment_confirmation_notification(
+                db=db,
+                payment_id=payment.id,
+                user_id=owner_id,
+                customer_id=customer.id,
+                customer_name=customer.contact_name,
+                plan_name=plan.name,
+                billing_cycle=plan.billing_cycle,
+                amount=str(payment.amount),
+                currency=plan.currency or "INR",
+                invoice_number=invoice.invoice_number,
+                confirm_url=confirm_url,
+                reject_url=reject_url,
+            )
+            return _checkout_result(
+                payment,
+                invoice,
+                existing,
+                "confirmation_required",
+                confirmation_expires_at=expires_at,
+                confirmation_url=confirm_url,
+                email_delivered=notification.is_sent,
+            )
         raise HTTPException(
             status_code=409,
             detail="A checkout already exists for this customer and plan.",
