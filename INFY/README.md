@@ -30,16 +30,6 @@ The project combines a **React frontend**, **FastAPI backend**, **PostgreSQL dat
 
 ## Complete Local Runbook
 
-For the complete, executable startup sequence and platform workflow, see
-[my_contriution.md](my_contriution.md). It covers:
-
-- PostgreSQL and Redis with Docker Compose or native Windows services
-- FastAPI, Alembic migrations, seed data, Swagger, and ReDoc
-- Celery worker and Celery Beat
-- React/Vite frontend and the e-learning route
-- Registration, plans, subscriptions, invoices, payments, retries, and reports
-- SQLite test isolation and moving the application database to PostgreSQL
-- PowerShell smoke tests, troubleshooting, and safe shutdown
 
 The shortest development startup is:
 
